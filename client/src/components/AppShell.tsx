@@ -15,13 +15,13 @@ export default function AppShell({ children, active = "home", title = "مساع�
     <div className="min-h-screen bg-ink text-sand" dir="rtl">
       <div className="grain" aria-hidden="true" />
       <aside className={`side-rail ${open ? "is-open" : ""}`}>
-        <div className="rail-top"><a className="brand-lockup" href="/"><span className="brand-seal"><span>ب</span></span><span><strong>مساعد بدر</strong><small>عزنا بطيبنا</small></span></a><button className="icon-button mobile-close" onClick={() => setOpen(false)} aria-label="إغلاق القائمة"><X size={18} /></button></div>
+        <div className="rail-top"><a className="brand-lockup" href="#/"><span className="brand-seal"><span>ب</span></span><span><strong>مساعد بدر</strong><small>عزنا بطيبنا</small></span></a><button className="icon-button mobile-close" onClick={() => setOpen(false)} aria-label="إغلاق القائمة"><X size={18} /></button></div>
         <div className="rail-rule" />
         <nav className="rail-nav" aria-label="التنقل الرئيسي">
-          {link("home", "/", "الرئيسية", <span className="nav-letter">ب</span>)}
-          {link("assistant", "/assistant", "المساعد", <MessageCircle size={17} />)}
-          {link("store", "/store", "اكتشف المتجر", <ShoppingBag size={17} />)}
-          {link("knowledge", "/knowledge", "المعرفة الموثقة", <BookOpen size={17} />)}
+          {link("home", "#/", "الرئيسية", <span className="nav-letter">ب</span>)}
+          {link("assistant", "#/assistant", "المساعد", <MessageCircle size={17} />)}
+          {link("store", "#/store", "اكتشف المتجر", <ShoppingBag size={17} />)}
+          {link("knowledge", "#/knowledge", "المعرفة الموثقة", <BookOpen size={17} />)}
         </nav>
         <div className="rail-spacer" />
         <div className="rail-note"><ShieldCheck size={18} /><div><strong>المعلومة أولًا</strong><p>لا نعرض تفاصيل منتج إلا من مصدر معتمد.</p></div></div>
