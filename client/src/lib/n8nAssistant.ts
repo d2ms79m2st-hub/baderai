@@ -20,7 +20,8 @@ const MAX_ATTEMPTS = 2;
 
 function getReply(payload: N8nPayload) {
   const value = payload.reply ?? payload.output ?? payload.text ?? payload.answer;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+  if (typeof value !== "string" || !value.trim()) return null;
+  return value.replace(/\\\*\*/g, "").replace(/\*\*/g, "").trim();
 }
 
 function wait(ms: number, signal: AbortSignal) {
