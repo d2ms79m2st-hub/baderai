@@ -63,14 +63,22 @@ async function postJson(url: string, body: Record<string, unknown>, signal: Abor
   throw lastError ?? new Error("assistant_request_failed");
 }
 
-export async function askN8nAssistant(input: { message: string; sessionKey: string; history: AssistantMessage[] }) {
+export async function askN8nAssistant(input: { message: string; sessionKey: string; history: AssistantMessage[]; catalog?: unknown[] }) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), MAX_WAIT_MS + 5000);
   try {
+    const catalogContext = Array.isArray(input.catalog) && input.catalog.length
+      ? `\n\n[كتالوج بدر الرسمي — استخدمه للتحقق فقط، ولا تخترع ما ليس فيه]\n${input.catalog.map((item) => {
+        const product = item as { name?: string; price?: number | null; regularPrice?: number | null; url?: string; description?: string | null; available?: boolean; outOfStock?: boolean; categories?: { name?: string }[] };
+        return `- ${product.name ?? "منتج بلا اسم"} | السعر: ${product.price ?? "غير متاح"} ر.س | السابق: ${product.regularPrice ?? "غير متاح"} | الحالة: ${product.outOfStock ? "نفدت الكمية" : product.available ? "متاح حسب snapshot" : "تحتاج تحققًا"} | الفئة: ${(product.categories ?? []).map(category => category.name).filter(Boolean).join("، ")} | الرابط: ${product.url ?? "غير متاح"} | الوصف: ${(product.description ?? "غير متاح").slice(0, 260)}`;
+      }).join("\n")}\n[نهاية الكتالوج]`
+      : "";
     const started = await postJson(START_URL, {
-      message: input.message,
+      message: `${input.message}${catalogContext}`,
+      userMessage: input.message,
       sessionKey: input.sessionKey,
       history: input.history,
+      catalog: input.catalog,
     }, controller.signal);
     const immediateReply = getReply(started);
     if (immediateReply) return { reply: immediateReply, sourceStatus: started.sourceStatus ?? "verified_context", officialSite: started.officialSite };

@@ -52,3 +52,15 @@ pnpm dev
 ## GitHub Pages
 
 Workflow النشر موجود في `.github/workflows/pages.yml`. كل Push إلى `main` يبني نسخة Vite وينشر `dist/public` على GitHub Pages. قبل إعلان نجاح أي إصدار يجب اختبار رابط `/baderai/#/assistant` وإرسال سؤال حي والتحقق من ظهور الرد.
+
+## كتالوج المنتجات الكامل
+
+يحتوي `docs/knowledge/bader-official-catalog.json` و`client/src/data/catalog.ts` على snapshot من 73 منتجًا فريدًا جُمعت من 10 تصنيفات رسمية عبر واجهة Salla العامة مع pagination. صفحة `/store` تعرض الكتالوج كاملًا وتدعم البحث بالاسم أو الوصف أو الفئة، والتصفية حسب التصنيف والسعر وحالة التوفر. لا توجد سلة أو بوابة دفع داخل مساعد بدر؛ كل بطاقة تفتح رابط المنتج الأصلي في المتجر الرسمي.
+
+لتحديث snapshot:
+
+```bash
+python3 scripts/sync-bader-catalog.py
+```
+
+بعد تشغيل السكربت يجب مراجعة `collectedAt` و`productCount` ثم إعادة توليد `client/src/data/catalog.ts` من JSON قبل النشر. الأسعار والتوفر بيانات مؤرخة، وليست وعدًا لحظيًا؛ المتجر الرسمي هو المرجع النهائي.

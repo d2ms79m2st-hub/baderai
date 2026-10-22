@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpLeft, Check, Copy, ExternalLink, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
+import { catalogProducts } from "@/data/catalog";
 import { verifiedProducts } from "@/data/products";
 import { askN8nAssistant, type AssistantMessage } from "@/lib/n8nAssistant";
 
@@ -34,7 +35,7 @@ function renderRichText(text: string) {
 }
 
 function productMentions(text: string) {
-  return verifiedProducts.filter(product => text.includes(product.name));
+  return catalogProducts.filter(product => text.includes(product.name));
 }
 
 export default function Assistant() {
@@ -70,7 +71,7 @@ export default function Assistant() {
     setMessages(current => [...current, { id: makeId(), role: "user", content: trimmed }]);
     setIsPending(true);
     try {
-      const result = await askN8nAssistant({ message: trimmed, sessionKey, history });
+      const result = await askN8nAssistant({ message: trimmed, sessionKey, history, catalog: catalogProducts });
       setMessages(current => [...current, { id: makeId(), role: "assistant", content: result.reply }]);
     } catch (error) {
       const code = error instanceof Error ? error.message : "assistant_failed";
