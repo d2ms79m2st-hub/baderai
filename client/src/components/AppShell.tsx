@@ -15,7 +15,7 @@ export default function AppShell({ children, active = "home", title = "مساع�
     <div className="min-h-screen bg-ink text-sand" dir="rtl">
       <div className="grain" aria-hidden="true" />
       <aside className={`side-rail ${open ? "is-open" : ""}`}>
-        <div className="rail-top"><a className="brand-lockup" href="#/"><span className="brand-seal"><span>ب</span></span><span><strong>مساعد بدر</strong><small>عزنا بطيبنا</small></span></a><button className="icon-button mobile-close" onClick={() => setOpen(false)} aria-label="إغلاق القائمة"><X size={18} /></button></div>
+        <div className="rail-top"><a className="brand-lockup" href="#/"><span className="brand-seal brand-logo"><img src="https://cdn.salla.sa/AzeRxp/WR3AdGBPe4QE7iYii6LpAV85oC0tmDwGjq7BsoFu.png" alt="شعار بدر أبا الخيل" /></span><span><strong>مساعد بدر</strong><small>عزنا بطيبنا</small></span></a><button className="icon-button mobile-close" onClick={() => setOpen(false)} aria-label="إغلاق القائمة"><X size={18} /></button></div>
         <div className="rail-rule" />
         <nav className="rail-nav" aria-label="التنقل الرئيسي">
           {link("home", "#/", "الرئيسية", <span className="nav-letter">ب</span>)}
@@ -29,7 +29,7 @@ export default function AppShell({ children, active = "home", title = "مساع�
         <div className="rail-footer"><span>الرياض، السعودية</span><span>01 / 2026</span></div>
       </aside>
       <main className="main-stage">
-        <header className="topbar"><button className="icon-button mobile-menu" onClick={() => setOpen(true)} aria-label="فتح القائمة"><span className="menu-lines">☰</span></button><div className="breadcrumb"><span>بدر أبا الخيل</span><b>‹</b><strong>{title}</strong></div><div className="topbar-actions"><span className="live-dot"><i /> متصل بالمصدر الرسمي</span><a href={officialSite} target="_blank" rel="noreferrer" className="text-link">المتجر الرسمي <ExternalLink size={14} /></a></div></header>
+        <header className="topbar"><button className="icon-button mobile-menu" onClick={() => setOpen(true)} aria-label="فتح القائمة"><span className="menu-lines">☰</span></button><div className="breadcrumb"><span>بدر أبا الخيل</span><b>‹</b><strong>{title}</strong></div><div className="topbar-actions"><span className="live-dot"><i /> متصل بالمصدر الرسمي</span><a href={officialSite} target="_blank" rel="noopener noreferrer" className="text-link">المتجر الرسمي <ExternalLink size={14} /></a></div></header>
         {children}
       </main>
     </div>

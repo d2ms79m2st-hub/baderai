@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "brand": "بدر أباالخيل",
+  "officialStore": "https://baderabalkhail.com",
+  "collectedAt": "2026-10-22",
+  "collectionMethod": "صفحات المنتجات الرسمية وبيانات Schema.org الظاهرة في المصدر الرسمي",
+  "rules": [
+    "لا تُستنتج المنتجات من اسم العلامة أو عنوان المتجر.",
+    "لا يُستخدم السعر أو التوفر إلا مع ذكر رابط المصدر وتاريخ الجمع.",
+    "إذا تعارض النص المرئي مع Schema.org فلا تُحسم القيمة؛ تُعرض الحالة كتعارض مصدر.",
+    "المعلومات العامة الموثوقة مسموحة، لكن أسئلة العلامة تعتمد على هذه السجلات الموثقة فقط."
+  ],
+  "officialCategoryPages": [
+    {
+      "name": "خشب العود",
+      "url": "https://baderabalkhail.com/-/c1168655920",
+      "source": "https://baderabalkhail.com/-/c1168655920",
+      "collectedAt": "2026-10-22",
+      "productListingsVerified": false,
+      "note": "الصفحة تعرض عنوان التصنيف وخيارات الترتيب فقط في اللقطة المقروءة؛ لم تُستنتج منها أسماء منتجات."
+    },
+    {
+      "name": "العطور",
+      "url": "https://baderabalkhail.com/-/c898253916",
+      "source": "https://baderabalkhail.com/-/c898253916",
+      "collectedAt": "2026-10-22",
+      "productListingsVerified": false,
+      "note": "الصفحة تعرض عنوان التصنيف وخيارات الترتيب فقط في اللقطة المقروءة؛ لم تُستنتج منها أسماء منتجات."
+    }
+  ],
+  "products": [
+    {
+      "name": "نجد 75 ملي",
+      "url": "https://baderabalkhail.com/نجد-75-ملي/p1574729488",
+      "source": "https://baderabalkhail.com/نجد-75-ملي/p1574729488",
+      "collectedAt": "2026-10-22",
+      "sku": "1574729488",
+      "price": { "value": 135, "currency": "SAR", "display": "١٣٥ ر.س" },
+      "compareAtPrice": { "value": 150, "currency": "SAR", "display": "١٥٠ ر.س" },
+      "size": "75 ملي",
+      "officialDescription": "عطر عشبي حار. تنطلق الافتتاحية بحيوية الريحان العشبي وانتعاش نجيل الهند، تُحركها حدة الفلفل الأسود لتصنع بداية قوية ومثيرة. يستقر القلب على عمق الباتشولي الخشبي الترابي، في عطر يحمل روحاً جريئة ومميزة.",
+      "notes": ["الريحان", "نجيل الهند", "الفلفل الأسود", "الباتشولي"],
+      "availability": {
+        "visibleText": "نفدت الكمية",
+        "schemaOrg": "https://schema.org/InStock",
+        "normalized": "غير محسوم بسبب تعارض المصدر",
+        "sourceNote": "لا تعرض الواجهة أو المساعد توفرًا نهائيًا لهذا السجل دون إعادة تحقق لحظية."
+      }
+    },
+    {
+      "name": "WOODY 75 ملي",
+      "url": "https://baderabalkhail.com/woody-75-ملي/p1579430015",
+      "source": "https://baderabalkhail.com/woody-75-ملي/p1579430015",
+      "collectedAt": "2026-10-22",
+      "sku": "1579430015",
+      "price": { "value": 135, "currency": "SAR", "display": "١٣٥ ر.س" },
+      "compareAtPrice": { "value": 150, "currency": "SAR", "display": "١٥٠ ر.س" },
+      "size": "75 ملي",
+      "officialDescription": "عطر فاكهي زهري دافئ. تنطلق الافتتاحية بطراوة الكمثرى وانتعاش البرغموت وحلاوة الماندرين، تُحركها دفء الزنجبيل لبداية فاكهية حيوية ومبهجة. يأخذك القلب إلى نعومة زهر البرتقال مع عمق وفخامة Georgywood في مزيج زهري خشبي فريد. تُرسّخ القاعدة الحضور بثراء Ambrofix ونقاء المسك وغموض أكيغالاوود، تحتضنها خشب الأرز في توقيع فخم يدوم ويبقى.",
+      "notes": ["الكمثرى", "البرغموت", "الماندرين", "الزنجبيل", "زهر البرتقال", "Georgywood", "Ambrofix", "المسك", "أكيغالاوود", "خشب الأرز"],
+      "availability": {
+        "visibleText": "نفدت الكمية",
+        "schemaOrg": "https://schema.org/InStock",
+        "normalized": "غير محسوم بسبب تعارض المصدر",
+        "sourceNote": "لا تعرض الواجهة أو المساعد توفرًا نهائيًا لهذا السجل دون إعادة تحقق لحظية."
+      }
+    },
+    {
+      "name": "مروكي محسن حجم صغير",
+      "url": "https://baderabalkhail.com/مروكي-محسن-حجم-صغير/p982377704",
+      "source": "https://baderabalkhail.com/مروكي-محسن-حجم-صغير/p982377704",
+      "collectedAt": "2026-10-22",
+      "sku": "982377704",
+      "price": { "value": 68, "currency": "SAR", "display": "٦٨ ر.س" },
+      "compareAtPrice": { "value": 85, "currency": "SAR", "display": "٨٥ ر.س" },
+      "size": "حجم صغير",
+      "officialDescription": null,
+      "notes": [],
+      "availability": {
+        "visibleText": "نفدت الكمية",
+        "schemaOrg": "https://schema.org/OutOfStock",
+        "normalized": "نفدت الكمية"
+      }
+    }
+  ],
+  "notVerified": [
+    {
+      "claim": "أسعار العود كفئة عامة",
+      "reason": "لم تُعثر على صفحة منتج عود محدد في الصفحات التي أمكن قراءتها؛ لا يُستنتج السعر من اسم التصنيف."
+    },
+    {
+      "claim": "قائمة منتجات كاملة من صفحات التصنيفات",
+      "reason": "صفحات التصنيفات المقروءة لم تعرض قائمة المنتجات في المحتوى المستخرج."
+    }
+  ]
+}
