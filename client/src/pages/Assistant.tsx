@@ -23,19 +23,25 @@ export default function Assistant() {
     try {
       const result = await askN8nAssistant({ message: trimmed, sessionKey, history });
       setMessages(current => [...current, { role: "assistant", content: result.reply }]);
-    } catch {
-      setMessages(current => [...current, { role: "assistant", content: "تعذر الوصول إلى مساعد بدر حاليًا. تأكد من تفعيل Workflow في n8n وإرجاع reply من Respond to Webhook." }]);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "assistant_failed";
+      const content = code === "assistant_timeout"
+        ? "تأخر الرد قليلًا. جرّب إرسال السؤال مرة أخرى."
+        : code.includes("429")
+          ? "المساعد مشغول حاليًا بسبب كثرة الطلبات. جرّب بعد قليل."
+          : "تعذر الوصول إلى مساعد بدر حاليًا بسبب مشكلة مؤقتة. جرّب بعد قليل أو افتح الموقع الرسمي.";
+      setMessages(current => [...current, { role: "assistant", content }]);
     } finally {
       setIsPending(false);
     }
   };
 
-  const requestHuman = () => setNotice("المتابعة البشرية تحتاج إعداد مسار منفصل في n8n.");
+  const requestHuman = () => setNotice("سيتطلب التحويل لموظف إعداد قناة خدمة عملاء رسمية.");
 
   return <AppShell active="assistant" title="المساعد">
     <section className="assistant-page">
       <div className="assistant-page-intro"><div><span className="section-kicker">مساعد بدر — محادثة خاصة</span><h1>خذ راحتك،<br /><em>واسأل براحتك.</em></h1><p>مساحة محادثة كاملة تساعدك تفهم احتياجك وتصل إلى المصدر الرسمي بدون تشتيت.</p></div><div className="assistant-page-badge"><Sparkles size={18} /><span>محادثة<br />خاصة</span></div></div>
-      <div className="assistant-shell assistant-full"><div className="assistant-topline"><div className="assistant-id"><span className="assistant-avatar"><Sparkles size={16} /></span><div><strong>مساعد بدر</strong><small><i /> عبر n8n</small></div></div><div className="assistant-context"><Clock3 size={15} /> ينتظر رد الذكاء الاصطناعي</div></div><div className="chat-window">{messages.map((item, index) => <div className={`chat-row ${item.role}`} key={`${item.role}-${index}`}><div className="chat-bubble">{item.content}</div><span className="chat-time">{item.role === "assistant" ? "مساعد بدر" : "أنت"}</span></div>)}{isPending && <div className="chat-row assistant"><div className="chat-bubble typing"><i /><i /><i /></div></div>}</div><div className="prompt-list">{prompts.map(prompt => <button key={prompt} onClick={() => void send(prompt)} disabled={isPending}>{prompt}<ArrowUpLeft size={14} /></button>)}</div><form className="chat-input" onSubmit={event => { event.preventDefault(); void send(); }}><input value={message} onChange={event => setMessage(event.target.value)} placeholder="اكتب سؤالك هنا..." aria-label="رسالتك إلى مساعد بدر" /><button type="submit" disabled={isPending || !message.trim()} aria-label="إرسال الرسالة"><Send size={18} /></button></form><div className="assistant-footnote"><span><ShieldCheck size={14} /> الرد يأتي من Workflow n8n</span><button onClick={requestHuman}><MessageCircle size={14} /> أحتاج موظفًا</button></div>{notice && <div className="human-notice"><Check size={15} /> {notice}</div>}</div>
+      <div className="assistant-shell assistant-full"><div className="assistant-topline"><div className="assistant-id"><span className="assistant-avatar"><Sparkles size={16} /></span><div><strong>مساعد بدر</strong><small><i /> خادم تنفيذ مستقل</small></div></div><div className="assistant-context"><Clock3 size={15} /> ينتظر رد الذكاء الاصطناعي</div></div><div className="chat-window">{messages.map((item, index) => <div className={`chat-row ${item.role}`} key={`${item.role}-${index}`}><div className="chat-bubble">{item.content}</div><span className="chat-time">{item.role === "assistant" ? "مساعد بدر" : "أنت"}</span></div>)}{isPending && <div className="chat-row assistant"><div className="chat-bubble typing"><i /><i /><i /></div></div>}</div><div className="prompt-list">{prompts.map(prompt => <button key={prompt} onClick={() => void send(prompt)} disabled={isPending}>{prompt}<ArrowUpLeft size={14} /></button>)}</div><form className="chat-input" onSubmit={event => { event.preventDefault(); void send(); }}><input value={message} onChange={event => setMessage(event.target.value)} placeholder="اكتب سؤالك هنا..." aria-label="رسالتك إلى مساعد بدر" /><button type="submit" disabled={isPending || !message.trim()} aria-label="إرسال الرسالة"><Send size={18} /></button></form><div className="assistant-footnote"><span><ShieldCheck size={14} /> الرد يأتي من خادم بدر وقاعدة المعرفة الموثقة</span><button onClick={requestHuman}><MessageCircle size={14} /> أحتاج موظفًا</button></div>{notice && <div className="human-notice"><Check size={15} /> {notice}</div>}</div>
     </section>
   </AppShell>;
 }
