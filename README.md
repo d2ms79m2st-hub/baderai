@@ -1,14 +1,57 @@
 # مساعد بدر — بدر أبا الخيل للعود والعطور
 
-React / Express / tRPC / Drizzle starter, adapted from the Sandbox web-db-user template.
+منصة عربية RTL تجمع مساعدًا ذكيًا وتجربة معرفة تقود العميل إلى متجر بدر أبا الخيل للعود والعطور. النسخة الحالية مبنية على React وExpress وtRPC وDrizzle، وتستخدم الخادم لاستدعاء نموذج الذكاء الاصطناعي مع سياق موثق من الموقع الرسمي.
 
-- `pnpm dev`: development server; honors `PORT` (default 3000).
-- `pnpm build` / `pnpm start`: build and serve `dist/index.js` and `dist/public/`.
-- `pnpm db:migrate`: apply checked-in migrations. `pnpm db:push`: generate and apply new schema changes.
-- `pnpm check` / `pnpm test`: types and application tests.
+## ما يعمل الآن
 
-Start with the Webdev skill's default-template guide. Platform login, storage, payments and service contracts live in its shared references; read the relevant capability before extending its helper.
+تتضمن النسخة صفحة رئيسية متجاوبة بهوية تحريرية سعودية، مساعد محادثة فعلي عبر `server/routers.ts`، روابط مباشرة إلى الموقع الرسمي وتصنيفي «خشب العود» و«العطور» وصفحة «التخفيضات»، وطبقة معرفة تشرح مصدر البيانات. عند توفر متغيرات منصة Manus يستدعي المساعد `/v1/chat/completions` من الخادم. وعند تعذر النموذج يعود إلى إجابة آمنة لا تخترع منتجاتًا أو أسعارًا. يمكن تسجيل الرسائل وطلبات التدخل البشري في قاعدة البيانات عند توفر `DATABASE_URL`.
 
-`server/_core/publicConfig.ts` exposes only named public runtime values. Private keys stay server-side. The platform serves managed `/manus-storage/` assets; the application does not register a second proxy.
+المصدر الرسمي الذي تم التحقق منه هو [baderabalkhail.com](https://baderabalkhail.com). الصفحات العامة التي أمكن الوصول إليها تثبت اسم العلامة وشعارها والتصنيفات، لكنها لا تعرض حاليًا كتالوجًا تفصيليًا موثوقًا يمكن نسخه إلى المنصة. لذلك لا توجد في النسخة الحالية بطاقات منتجات أو أسعار مخترعة.
 
-Platform configuration is readable and editable through `webdev.config`. Default settings are initial values, not enforced constraints. The agent may modify the files, commands and configuration or follow the flexible guide for another stack.
+## التشغيل المحلي
+
+```bash
+pnpm install
+pnpm check
+pnpm db:push
+pnpm dev
+```
+
+يفتح الخادم على المنفذ `3000` افتراضيًا، ويمكن تغييره عبر `PORT`. فحص الصحة متاح في `GET /api/health`، وملف المسارات العام في `GET /manus-routes.json`.
+
+لبناء الإنتاج وتشغيله:
+
+```bash
+pnpm build
+pnpm start
+```
+
+## متغيرات البيئة
+
+القيم التي توفرها منصة Manus مثل `MANUS_API_URL` و`MANUS_API_KEY` و`DATABASE_URL` تُقرأ من الخادم فقط. لا تضعها في الكود أو في ملفات عامة. تسجيل الدخول الافتراضي المجهز في القالب يستخدم Manus OAuth عند الحاجة إلى حسابات الإدارة. لا توجد مفاتيح خارجية مطلوبة لتشغيل الواجهة الأساسية.
+
+## قاعدة البيانات
+
+المخطط في `drizzle/schema.ts` يحتوي جداول المستخدمين، ومصادر المعرفة، ورسائل المحادثة، وطلبات التدخل البشري. ملف الترحيل الناتج موجود في `drizzle/`. نفّذ `pnpm db:push` بعد تعديل المخطط في بيئة تطوير متصلة، ثم راجع التغيير قبل اعتماده لأن قاعدة بيانات المشروع المُدارة مشتركة بين التطوير والنشر.
+
+## المساعد والبيانات
+
+إجراء `assistant.ask` يستقبل `message` و`sessionKey` و`history`، ويعيد `reply` و`sourceStatus` و`officialSite`. سياق المساعد يذكر صراحة أن معلومات المنتجات والأسعار والمكونات والتوفر غير مؤكدة حاليًا، لذلك لا يعرضها كحقائق. إجراء `assistant.requestHuman` يسجل الطلب بحالة `pending`، ولا يدعي أن موظفًا تواصل مع العميل.
+
+## n8n — الحالة والتصميم المقترح
+
+لم يتم تفعيل موصل n8n أو إنشاء Workflows إنتاجية لأن عنوان الخادم وبيانات الاعتماد غير متاحة في هذه الجلسة. لا نعرض التكامل على أنه جاهز. بعد توفير n8n وWebhook محمي يمكن إنشاء هذه المسارات:
+
+1. **Human handoff:** يستقبل ملخصًا من `assistant.requestHuman`، يتحقق من رمز سري، ينشئ تذكرة، ويرسل إشعارًا إداريًا. المدخل المقترح `{ sessionKey, summary, createdAt }` والمخرج `{ accepted, ticketId }`.
+2. **Catalog sync:** يستورد كتالوجًا رسميًا من المصدر المسموح، يتحقق من الحقول والسعر والمخزون، ثم يحدّث قاعدة المعرفة بعد اعتماد التغيير. لا يستبدل البيانات الصحيحة ببيانات ناقصة.
+3. **Failed workflow alert:** يلتقط حالات الفشل ويرسل تنبيهًا دون كشف الرسائل الحساسة أو الأسرار.
+
+يجب حماية Webhooks عبر HTTPS ورمز سري أو توقيع، وحفظ مفاتيح n8n في Credentials، ووضع مهلة وإعادة محاولة آمنة ومعرّف idempotency للعمليات الحساسة. لا تُحفظ بيانات البطاقات البنكية في التطبيق.
+
+## GitHub والنشر
+
+الكود موجود في مجلد المشروع ويجتاز `pnpm check` و`pnpm build`. نقل المستودع canonical إلى GitHub يحتاج تأكيد مالك المشروع عبر إعدادات Webdev، لذلك لم يتم الادعاء بوجود مستودع GitHub أو نشر خارجي قبل إكمال تلك الموافقة. بعد الربط، يُحفظ `main` ويُستخدم checkpoint مستقر، ثم يمكن إعداد النشر المتصل بالمستودع وفق صلاحيات الحساب.
+
+## ما يلزم للمرحلة التالية
+
+يلزم توفير أو اعتماد واجهة رسمية لكتالوج سلة حتى تظهر أسماء المنتجات والصور والأسعار والمخزون، وبيانات n8n وWebhook وقناة الإشعارات إن أريدت الأتمتة، وبيانات بوابة الدفع والشحن إن أريد إتمام الطلب داخل المنصة، ثم تأكيد نقل المستودع إلى GitHub. إلى أن يحدث ذلك، تبقى الروابط الرسمية هي مسار الشراء، وتبقى أي معلومة غير مؤكدة مخفية.
