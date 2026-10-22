@@ -37,6 +37,46 @@ function fallbackReply(message: string) {
   return "أنا مساعد بدر. أقدر أساعدك في الوصول لتصنيفات متجر بدر الرسمية، أو أرتب معك احتياجك من حيث المناسبة والميزانية والنوع. حاليًا ما أعرض أي تفاصيل منتج إلا إذا كانت مؤكدة من المصدر الرسمي.";
 }
 
+async function askN8n(message: string, sessionKey: string, history: ChatTurn[]) {
+  if (!ENV.n8nWebhookUrl || !ENV.n8nWebhookSecret) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const response = await fetch(ENV.n8nWebhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-bader-webhook-secret": ENV.n8nWebhookSecret,
+        "x-webhook-secret": ENV.n8nWebhookSecret,
+      },
+      body: JSON.stringify({
+        message,
+        sessionKey,
+        history,
+        brandContext: officialSource,
+        verifiedKnowledge: sourceContext,
+        responseContract: { reply: "string", sourceStatus: "n8n_verified_context" },
+      }),
+      signal: controller.signal,
+    });
+    const body = await response.json().catch(() => ({}));
+    const candidate = Array.isArray(body) ? body[0] : body;
+    const content = candidate?.reply ?? candidate?.output ?? candidate?.text ?? candidate?.message ?? candidate?.data?.reply ?? candidate?.data?.output;
+    if (response.ok && typeof content === "string" && content.trim()) return content.trim();
+    console.warn("[Assistant] n8n returned no usable reply", {
+      status: response.status,
+      topLevelKeys: candidate && typeof candidate === "object" ? Object.keys(candidate).slice(0, 20) : [],
+      nestedDataKeys: candidate?.data && typeof candidate.data === "object" ? Object.keys(candidate.data).slice(0, 20) : [],
+      isArray: Array.isArray(body),
+    });
+  } catch (error) {
+    console.warn("[Assistant] n8n request failed; continuing with safe fallback:", error);
+  } finally {
+    clearTimeout(timeout);
+  }
+  return null;
+}
+
 async function saveChat(sessionKey: string, turns: ChatTurn[]) {
   const db = await getDb();
   if (!db) return;
@@ -80,7 +120,11 @@ export const appRouter = router({
         let reply = fallbackReply(input.message);
         let sourceStatus = "fallback";
 
-        if (ENV.forgeApiUrl && ENV.forgeApiKey) {
+        const n8nReply = await askN8n(input.message, input.sessionKey, input.history);
+        if (n8nReply) {
+          reply = n8nReply;
+          sourceStatus = "n8n_verified_context";
+        } else if (ENV.forgeApiUrl && ENV.forgeApiKey) {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 20_000);
           try {
