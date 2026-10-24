@@ -81,6 +81,41 @@ create index if not exists catalog_product_prices_current_idx
 create index if not exists catalog_product_images_current_idx
   on public.catalog_product_images (product_id, is_current, sort_order);
 
+-- Make table privileges explicit; RLS remains the authorization boundary.
+revoke all on table
+  public.catalog_products,
+  public.catalog_categories,
+  public.catalog_product_categories,
+  public.catalog_product_prices,
+  public.catalog_product_images
+from anon, authenticated;
+
+grant select on table
+  public.catalog_products,
+  public.catalog_categories,
+  public.catalog_product_categories,
+  public.catalog_product_prices,
+  public.catalog_product_images
+to anon, authenticated;
+
+grant insert, update, delete on table
+  public.catalog_products,
+  public.catalog_categories,
+  public.catalog_product_categories,
+  public.catalog_product_prices,
+  public.catalog_product_images
+to authenticated;
+
+revoke all on sequence
+  public.catalog_product_prices_id_seq,
+  public.catalog_product_images_id_seq
+from anon, authenticated;
+
+grant usage, select on sequence
+  public.catalog_product_prices_id_seq,
+  public.catalog_product_images_id_seq
+to authenticated;
+
 alter table public.catalog_products enable row level security;
 alter table public.catalog_categories enable row level security;
 alter table public.catalog_product_categories enable row level security;
