@@ -12,7 +12,7 @@ create table if not exists public.catalog_products (
   currency text not null default 'SAR',
   weight text,
   has_options boolean not null default false,
-  rating numeric(4,2),
+  rating jsonb,
   available boolean not null default false,
   out_of_stock boolean not null default false,
   source_store_id text not null,
@@ -22,7 +22,7 @@ create table if not exists public.catalog_products (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint catalog_products_availability_check check (not (available and out_of_stock)),
-  constraint catalog_products_rating_check check (rating is null or (rating >= 0 and rating <= 5)),
+  constraint catalog_products_rating_check check (rating is null or jsonb_typeof(rating) = 'object'),
   constraint catalog_products_currency_check check (currency <> '')
 );
 

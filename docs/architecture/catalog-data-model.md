@@ -39,7 +39,7 @@
 - `currency text not null default 'SAR'`
 - `weight text null`: يُحفظ كنص في البداية لأن المصدر الحالي لا يضمن وحدة رقمية موحدة.
 - `has_options boolean not null default false`
-- `rating numeric(4,2) null`
+- `rating jsonb null`: المصدر الفعلي يرسل `null` غالبًا، وأحيانًا كائنًا مثل `{"count": 2, "stars": 5}`؛ لا يُحوّل إلى رقم مصطنع.
 - `available boolean not null default false`
 - `out_of_stock boolean not null default false`
 - `source_store_id text not null`

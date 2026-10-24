@@ -18,7 +18,7 @@ export type SourceProduct = {
   hasOptions?: boolean;
   weight: string | null;
   sku?: string | null;
-  rating?: number | null;
+  rating?: number | Record<string, unknown> | null;
   categories: SourceCategory[];
   [key: string]: unknown;
 };

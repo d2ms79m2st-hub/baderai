@@ -37,6 +37,8 @@ describe("catalog migration security contract", () => {
     expect(migration).toContain("catalog_product_prices_snapshot_unique");
     expect(migration).toContain("catalog_products_availability_check");
     expect(migration).toContain("catalog_products_rating_check");
+    expect(migration).toContain("rating jsonb");
+    expect(migration).toContain("jsonb_typeof(rating) = 'object'");
     expect(migration).toContain("catalog_products_public_read");
     expect(migration).toContain("catalog_products_admin_insert");
     expect(migration).toContain("catalog_products_admin_update");
