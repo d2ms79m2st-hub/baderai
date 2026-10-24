@@ -312,7 +312,7 @@ export default function Assistant() {
         message: trimmed,
         sessionKey,
         history: currentHistory,
-        catalog: catalogProducts,
+        catalog: catalogProducts.filter(product => product.available && !product.outOfStock),
       });
       const structured = resolveProductRefs(result.products);
       const localSearch = searchCatalog(trimmed);

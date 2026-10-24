@@ -109,7 +109,9 @@ function validProduct(product: CatalogProduct) {
       product.name &&
       product.url &&
       product.image &&
-      product.currency === "SAR"
+      product.currency === "SAR" &&
+      product.available &&
+      !product.outOfStock
   );
 }
 
@@ -207,7 +209,7 @@ export function searchCatalog(query: string): CatalogSearchResult {
       )
     : [];
   if (unavailableRequest) {
-    const products = named.slice(0, 6);
+    const products = named.filter(validProduct).slice(0, 6);
     return {
       products,
       intent: named.length ? "product" : intent,
@@ -221,7 +223,7 @@ export function searchCatalog(query: string): CatalogSearchResult {
   }
 
   if (named.length && intent === "unknown") {
-    const products = named.slice(0, 6);
+    const products = named.filter(validProduct).slice(0, 6);
     return {
       products,
       intent: "product",
@@ -240,7 +242,8 @@ export function searchCatalog(query: string): CatalogSearchResult {
     const products = categories
       .map(category =>
         catalogProducts.find(product =>
-          product.categories.some(item => item.name === category)
+          product.categories.some(item => item.name === category) &&
+          validProduct(product)
         )
       )
       .filter((product): product is CatalogProduct => Boolean(product))

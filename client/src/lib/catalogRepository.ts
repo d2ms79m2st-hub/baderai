@@ -12,7 +12,7 @@ export type CatalogSnapshot = {
 };
 
 export const catalogRolloutSource: "local" | "supabase" =
-  import.meta.env.VITE_CATALOG_SOURCE === "supabase" ? "supabase" : "local";
+  import.meta.env.VITE_CATALOG_SOURCE === "local" ? "local" : "supabase";
 
 export function createLocalFallback(reason: unknown) {
   return {

@@ -54,6 +54,7 @@ describe("catalog search", () => {
     const result = searchCatalog("وش عندكم من منتجات؟");
     expect(result.intent).toBe("all");
     expect(result.products.length).toBeGreaterThan(1);
+    expect(result.products.every(product => product.available && !product.outOfStock)).toBe(true);
     expect(
       new Set(result.products.map(product => product.categories[0]?.name)).size
     ).toBeGreaterThan(1);
