@@ -2,6 +2,26 @@
 
 لم تُنشأ Workflows إنتاجية في هذه النسخة لأن حساب n8n وWebhook ورمز المصادقة غير متاحة. هذا الملف يحدد العقد المطلوبة قبل التفعيل ولا يعتبر التكامل منفذًا.
 
+## عقد رد المساعد
+
+ترسل الواجهة `userMessage` و`history` و`catalog` الموثق، وتطلب الاستجابة التالية:
+
+```json
+{
+  "reply": "نص الرد العربي",
+  "products": [
+    {
+      "id": "1730754783",
+      "url": "https://baderabalkhail.com/...",
+      "name": "BLACK TEA"
+    }
+  ],
+  "sourceStatus": "n8n_verified_context"
+}
+```
+
+حقل `products` اختياري للتوافق مع الردود القديمة. لا تُعرض أي بطاقة إلا بعد مطابقة `id` أو `url` أو `name` مع `client/src/data/catalog.ts`؛ لذلك لا يكفي إرسال اسم أو سعر غير موجود في الكتالوج. يمكن أن يصل العقد مباشرة أو داخل `data`، كما تقبل الواجهة الحقول النصية القديمة `reply` و`output` و`text` و`answer`.
+
 ## Human handoff
 
 - **المحفز:** `POST /webhook/bader/human-handoff` بعد تسجيل طلب تدخل بشري.

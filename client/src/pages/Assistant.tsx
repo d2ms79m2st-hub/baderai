@@ -21,7 +21,11 @@ import {
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
 import { catalogProducts, type CatalogProduct } from "@/data/catalog";
-import { askN8nAssistant, type AssistantMessage } from "@/lib/n8nAssistant";
+import {
+  askN8nAssistant,
+  type AssistantMessage,
+  type AssistantProductRef,
+} from "@/lib/n8nAssistant";
 
 type Message = AssistantMessage & {
   id: string;
@@ -29,17 +33,52 @@ type Message = AssistantMessage & {
   productIds?: string[];
   suggestions?: string[];
 };
-type SavedChat = { id: string; title: string; updatedAt: string; messages: Message[] };
+type SavedChat = {
+  id: string;
+  title: string;
+  updatedAt: string;
+  messages: Message[];
+};
 
 type Theme = "light" | "dark";
 
 const quickStarts = [
-  { label: "اكتشف العود", detail: "خشب، دهن، ورقائق موثقة", icon: "ع", prompt: "أبغى أكتشف منتجات العود الموثقة" },
-  { label: "ابحث عن عطر", detail: "روائح عطرية من الكتالوج", icon: "عط", prompt: "ابحث لي عن عطر من منتجات بدر" },
-  { label: "هدية لمناسبة", detail: "خلّنا نرتبها بذوق", icon: "هـ", prompt: "أبغى هدية لمناسبة خاصة" },
-  { label: "حسب الميزانية", detail: "خيارات واضحة بالسعر", icon: "ر", prompt: "اقترح لي منتجات أقل من 100 ريال" },
-  { label: "قارن المنتجات", detail: "فرق واضح بدون تعقيد", icon: "م", prompt: "قارن لي بين منتجين من الكتالوج" },
-  { label: "كل المنتجات", detail: "شاهد الـ 73 منتجًا", icon: "٧٣", prompt: "اعرض لي كل المنتجات الموثقة" },
+  {
+    label: "اكتشف العود",
+    detail: "خشب، دهن، ورقائق موثقة",
+    icon: "ع",
+    prompt: "أبغى أكتشف منتجات العود الموثقة",
+  },
+  {
+    label: "ابحث عن عطر",
+    detail: "روائح عطرية من الكتالوج",
+    icon: "عط",
+    prompt: "ابحث لي عن عطر من منتجات بدر",
+  },
+  {
+    label: "هدية لمناسبة",
+    detail: "خلّنا نرتبها بذوق",
+    icon: "هـ",
+    prompt: "أبغى هدية لمناسبة خاصة",
+  },
+  {
+    label: "حسب الميزانية",
+    detail: "خيارات واضحة بالسعر",
+    icon: "ر",
+    prompt: "اقترح لي منتجات أقل من 100 ريال",
+  },
+  {
+    label: "قارن المنتجات",
+    detail: "فرق واضح بدون تعقيد",
+    icon: "م",
+    prompt: "قارن لي بين منتجين من الكتالوج",
+  },
+  {
+    label: "كل المنتجات",
+    detail: "شاهد الـ 73 منتجًا",
+    icon: "٧٣",
+    prompt: "اعرض لي كل المنتجات الموثقة",
+  },
 ];
 
 const preferencePrompts = [
@@ -52,7 +91,8 @@ const preferencePrompts = [
 const welcome: Message = {
   id: "welcome",
   role: "assistant",
-  content: "يا هلا بك. أنا مساعد بدر أبا الخيل. خلّنا نرتب اختيارك بهدوء — أسأل عن احتياجك، وأعرض لك ما تؤكده بيانات المتجر الرسمي فقط.",
+  content:
+    "يا هلا بك. أنا مساعد بدر أبا الخيل. خلّنا نرتب اختيارك بهدوء — أسأل عن احتياجك، وأعرض لك ما تؤكده بيانات المتجر الرسمي فقط.",
 };
 
 function makeId() {
@@ -60,44 +100,198 @@ function makeId() {
 }
 
 function formatPrice(value: number | null) {
-  return typeof value === "number" ? `${new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(value)} ر.س` : "غير متاح";
+  return typeof value === "number"
+    ? `${new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(value)} ر.س`
+    : "غير متاح";
 }
 
 function renderRichText(text: string) {
   const urlPattern = /(https?:\/\/[^\s<]+)/g;
   return text.split(urlPattern).map((part, index) => {
-    if (!/^https?:\/\//i.test(part)) return <span key={`${part}-${index}`}>{part}</span>;
+    if (!/^https?:\/\//i.test(part))
+      return <span key={`${part}-${index}`}>{part}</span>;
     const clean = part.replace(/[،؛.,)\]]+$/, "");
     const suffix = part.slice(clean.length);
-    return <span key={`${part}-${index}`}><a className="reply-link" href={clean} target="_blank" rel="noopener noreferrer">{clean}<ExternalLink size={12} /></a>{suffix}</span>;
+    return (
+      <span key={`${part}-${index}`}>
+        <a
+          className="reply-link"
+          href={clean}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {clean}
+          <ExternalLink size={12} />
+        </a>
+        {suffix}
+      </span>
+    );
   });
 }
 
 function uniqueProducts(products: CatalogProduct[]) {
-  return Array.from(new Map(products.map(product => [product.url, product])).values());
+  return Array.from(
+    new Map(products.map(product => [product.url, product])).values()
+  );
 }
 
-function findProducts(query: string, response = "") {
-  const source = `${query} ${response}`.toLocaleLowerCase("ar");
-  const budget = source.match(/(?:أقل من|تحت|بحدود|ميزانية)\s*(\d{2,4})/i)?.[1];
-  const names = catalogProducts.filter(product => source.includes(product.name.toLocaleLowerCase("ar")));
-  const categories = catalogProducts.filter(product => product.categories.some(category => source.includes(category.name.toLocaleLowerCase("ar"))));
-  const keywordMatches = catalogProducts.filter(product => {
-    const haystack = `${product.name} ${product.description ?? ""} ${product.categories.map(category => category.name).join(" ")}`.toLocaleLowerCase("ar");
-    return ["عود", "عطر", "بخور", "زعفران", "لبان", "مبخرة", "هدية", "منتجات", "كتالوج"].some(keyword => source.includes(keyword) && haystack.includes(keyword));
+function normalizeArabic(value: string) {
+  return value
+    .toLocaleLowerCase("ar")
+    .normalize("NFKD")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const categoryIntents = [
+  {
+    terms: ["عود", "اعواد", "أعواد", "خشب العود", "دهن العود"],
+    categories: ["خشب العود", "دهن العود والمسك"],
+  },
+  {
+    terms: ["عطر", "عطور", "عطري", "عطرية", "عطرًا", "عطرا"],
+    categories: ["العطور", "المرشات"],
+  },
+  {
+    terms: ["بخور", "تبخير", "مبخرة", "مباخر"],
+    categories: ["البخور", "المباخر"],
+  },
+  { terms: ["زعفران", "لبان"], categories: ["الزعفران واللبان"] },
+  { terms: ["اكسسوار", "اكسسوارات"], categories: ["الاكسسوارات"] },
+];
+
+function resolveProductRefs(refs: AssistantProductRef[]) {
+  const resolved: CatalogProduct[] = [];
+  for (const ref of refs) {
+    const id = String(ref.id ?? ref.productId ?? "");
+    const name = ref.name ? normalizeArabic(ref.name) : "";
+    const match = catalogProducts.find(
+      product =>
+        (id && product.id === id) ||
+        (ref.url && product.url === ref.url) ||
+        (name && normalizeArabic(product.name) === name)
+    );
+    if (match && match.name && match.url && match.image) resolved.push(match);
+  }
+  return uniqueProducts(resolved);
+}
+
+function findProducts(query: string) {
+  const source = normalizeArabic(query);
+  const budget = source.match(
+    /(?:اقل من|تحت|بحدود|ميزانيه|ميزانية)\s*(\d{2,4})/i
+  )?.[1];
+  const requestedCategories = categoryIntents
+    .filter(intent =>
+      intent.terms.some(term => source.includes(normalizeArabic(term)))
+    )
+    .flatMap(intent => intent.categories);
+  const exactNames = catalogProducts.filter(product => {
+    const name = normalizeArabic(product.name);
+    return name.length > 2 && (source.includes(name) || name.includes(source));
   });
-  const byBudget = budget
-    ? catalogProducts.filter(product => typeof product.price === "number" && product.price <= Number(budget) && !product.outOfStock)
+  const nameTokens = source
+    .split(" ")
+    .filter(
+      token =>
+        token.length >= 3 &&
+        ![
+          "ابي",
+          "ابغى",
+          "اريد",
+          "ابحث",
+          "رشح",
+          "منتج",
+          "منتجات",
+          "عندي",
+          "عندكم",
+        ].includes(token)
+    );
+  const partialNames = catalogProducts.filter(product => {
+    const name = normalizeArabic(product.name);
+    return nameTokens.some(token => name.includes(token));
+  });
+  if (
+    source.includes("غير موجود") ||
+    source.includes("مو موجود") ||
+    source.includes("لا يوجد") ||
+    source.includes("ما عندكم")
+  ) {
+    return uniqueProducts([...exactNames, ...partialNames]).slice(0, 6);
+  }
+  const categoryMatches = requestedCategories.length
+    ? catalogProducts.filter(product =>
+        product.categories.some(category =>
+          requestedCategories.includes(category.name)
+        )
+      )
     : [];
-  return uniqueProducts([...names, ...byBudget, ...categories, ...keywordMatches]).slice(0, source.includes("مقارن") || source.includes("قارن") ? 4 : 6);
+  const budgetMatches = budget
+    ? catalogProducts.filter(
+        product =>
+          typeof product.price === "number" &&
+          product.price <= Number(budget) &&
+          !product.outOfStock
+      )
+    : [];
+  const giftMatches =
+    source.includes("هديه") || source.includes("هدية")
+      ? catalogProducts.filter(
+          product =>
+            !product.outOfStock &&
+            product.categories.some(category =>
+              ["العطور", "المرشات", "بوكسات"].includes(category.name)
+            )
+        )
+      : [];
+  const availabilityMatches =
+    source.includes("متوفر") || source.includes("متاح")
+      ? catalogProducts.filter(
+          product => product.available && !product.outOfStock
+        )
+      : [];
+  const matches = uniqueProducts([
+    ...exactNames,
+    ...partialNames,
+    ...budgetMatches,
+    ...giftMatches,
+    ...categoryMatches,
+    ...availabilityMatches,
+  ]);
+  const limit = source.includes("قارن") || source.includes("مقارن") ? 4 : 6;
+  return matches.slice(0, limit);
 }
-
 function followUps(query: string) {
   const source = query.toLocaleLowerCase("ar");
-  if (source.includes("هدية")) return ["ما المنتجات المناسبة لميزانية 100 ريال؟", "أحب هدية عطرية رسمية", "قارن لي خيارين للهدايا"];
-  if (source.includes("ميزانية") || /\d{2,4}/.test(source)) return ["قارن لي أرخص خيارين", "وش يناسب هدية؟", "اعرض كل المنتجات المتاحة"];
-  if (source.includes("عود")) return ["وش الفرق بين دهن العود والرقائق؟", "أبغى خيار يومي", "اعرض منتجات العود كاملة"];
-  return ["اكتشف المنتجات الموثقة", "ساعدني أختار هدية", "وش الأنواع الظاهرة في المتجر؟"];
+  if (source.includes("هدية"))
+    return [
+      "ما المنتجات المناسبة لميزانية 100 ريال؟",
+      "أحب هدية عطرية رسمية",
+      "قارن لي خيارين للهدايا",
+    ];
+  if (source.includes("ميزانية") || /\d{2,4}/.test(source))
+    return [
+      "قارن لي أرخص خيارين",
+      "وش يناسب هدية؟",
+      "اعرض كل المنتجات المتاحة",
+    ];
+  if (source.includes("عود"))
+    return [
+      "وش الفرق بين دهن العود والرقائق؟",
+      "أبغى خيار يومي",
+      "اعرض منتجات العود كاملة",
+    ];
+  return [
+    "اكتشف المنتجات الموثقة",
+    "ساعدني أختار هدية",
+    "وش الأنواع الظاهرة في المتجر؟",
+  ];
 }
 
 function comparisonRows(products: CatalogProduct[]) {
@@ -105,16 +299,64 @@ function comparisonRows(products: CatalogProduct[]) {
     product,
     category: product.categories[0]?.name ?? "غير محدد",
     size: product.weight ? `${product.weight} كجم` : "غير متاح",
-    status: product.outOfStock ? "نفدت الكمية" : product.available ? "متوفر حسب snapshot" : "تحتاج تحققًا",
+    status: product.outOfStock
+      ? "نفدت الكمية"
+      : product.available
+        ? "متوفر حسب snapshot"
+        : "تحتاج تحققًا",
   }));
 }
 
 function ComparisonTable({ products }: { products: CatalogProduct[] }) {
   if (products.length < 2) return null;
-  return <div className="comparison-card" dir="rtl">
-    <div className="comparison-heading"><span><GitCompareArrows size={17} /> مقارنة من الكتالوج</span><small>{products.length} خيارات موثقة</small></div>
-    <div className="comparison-scroll"><table><thead><tr><th>المنتج</th><th>الفئة</th><th>السعر</th><th>الحجم</th><th>التوفر</th></tr></thead><tbody>{comparisonRows(products).map(({ product, category, size, status }) => <tr key={product.url}><td><a href={product.url} target="_blank" rel="noopener noreferrer"><img src={product.image} alt="" /><strong>{product.name}</strong><ExternalLink size={12} /></a></td><td>{category}</td><td className="comparison-price">{formatPrice(product.price)}</td><td>{size}</td><td>{status}</td></tr>)}</tbody></table></div>
-  </div>;
+  return (
+    <div className="comparison-card" dir="rtl">
+      <div className="comparison-heading">
+        <span>
+          <GitCompareArrows size={17} /> مقارنة من الكتالوج
+        </span>
+        <small>{products.length} خيارات موثقة</small>
+      </div>
+      <div className="comparison-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>المنتج</th>
+              <th>الفئة</th>
+              <th>السعر</th>
+              <th>الحجم</th>
+              <th>التوفر</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisonRows(products).map(
+              ({ product, category, size, status }) => (
+                <tr key={product.url}>
+                  <td>
+                    <a
+                      href={product.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img src={product.image} alt="" />
+                      <strong>{product.name}</strong>
+                      <ExternalLink size={12} />
+                    </a>
+                  </td>
+                  <td>{category}</td>
+                  <td className="comparison-price">
+                    {formatPrice(product.price)}
+                  </td>
+                  <td>{size}</td>
+                  <td>{status}</td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 export default function Assistant() {
@@ -122,32 +364,59 @@ export default function Assistant() {
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
       const saved = sessionStorage.getItem("bader-assistant-messages");
-      return saved ? JSON.parse(saved) as Message[] : [welcome];
+      return saved ? (JSON.parse(saved) as Message[]) : [welcome];
     } catch {
       return [welcome];
     }
   });
-  const [sessionKey, setSessionKey] = useState(() => sessionStorage.getItem("bader-assistant-session") ?? makeId());
+  const [sessionKey, setSessionKey] = useState(
+    () => sessionStorage.getItem("bader-assistant-session") ?? makeId()
+  );
   const [savedChats, setSavedChats] = useState<SavedChat[]>(() => {
-    try { return JSON.parse(localStorage.getItem("bader-assistant-history") ?? "[]") as SavedChat[]; } catch { return []; }
+    try {
+      return JSON.parse(
+        localStorage.getItem("bader-assistant-history") ?? "[]"
+      ) as SavedChat[];
+    } catch {
+      return [];
+    }
   });
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("bader-assistant-theme") as Theme) || "light");
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem("bader-assistant-theme") as Theme) || "light"
+  );
   const [notice, setNotice] = useState("");
   const [isPending, setIsPending] = useState(false);
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const hasStarted = messages.some(item => item.role === "user");
-  const history = useMemo<AssistantMessage[]>(() => messages.slice(-10).map(({ role, content }) => ({ role, content })), [messages]);
+  const history = useMemo<AssistantMessage[]>(
+    () => messages.slice(-10).map(({ role, content }) => ({ role, content })),
+    [messages]
+  );
 
   useEffect(() => {
-    sessionStorage.setItem("bader-assistant-messages", JSON.stringify(messages));
+    sessionStorage.setItem(
+      "bader-assistant-messages",
+      JSON.stringify(messages)
+    );
     sessionStorage.setItem("bader-assistant-session", sessionKey);
     if (messages.some(item => item.role === "user")) {
       const firstUser = messages.find(item => item.role === "user");
-      const next: SavedChat = { id: sessionKey, title: firstUser?.content.slice(0, 38) || "محادثة بدر", updatedAt: new Date().toISOString(), messages };
+      const next: SavedChat = {
+        id: sessionKey,
+        title: firstUser?.content.slice(0, 38) || "محادثة بدر",
+        updatedAt: new Date().toISOString(),
+        messages,
+      };
       setSavedChats(current => {
-        const updated = [next, ...current.filter(chat => chat.id !== sessionKey)].slice(0, 12);
-        localStorage.setItem("bader-assistant-history", JSON.stringify(updated));
+        const updated = [
+          next,
+          ...current.filter(chat => chat.id !== sessionKey),
+        ].slice(0, 12);
+        localStorage.setItem(
+          "bader-assistant-history",
+          JSON.stringify(updated)
+        );
         return updated;
       });
     }
@@ -170,20 +439,50 @@ export default function Assistant() {
     setNotice("");
     const currentHistory = history;
     const userId = makeId();
-    setMessages(current => [...current, { id: userId, role: "user", content: trimmed }]);
+    setMessages(current => [
+      ...current,
+      { id: userId, role: "user", content: trimmed },
+    ]);
     setIsPending(true);
     try {
-      const result = await askN8nAssistant({ message: trimmed, sessionKey, history: currentHistory, catalog: catalogProducts });
-      const attached = findProducts(trimmed, result.reply);
-      setMessages(current => [...current, { id: makeId(), role: "assistant", content: result.reply, productIds: attached.map(product => product.url), suggestions: followUps(trimmed) }]);
+      const result = await askN8nAssistant({
+        message: trimmed,
+        sessionKey,
+        history: currentHistory,
+        catalog: catalogProducts,
+      });
+      const structured = resolveProductRefs(result.products);
+      const attached = structured.length ? structured : findProducts(trimmed);
+      setMessages(current => [
+        ...current,
+        {
+          id: makeId(),
+          role: "assistant",
+          content: result.reply,
+          productIds: attached.map(product => product.url),
+          suggestions: followUps(trimmed),
+        },
+      ]);
     } catch (error) {
       const code = error instanceof Error ? error.message : "assistant_failed";
-      const content = code === "assistant_timeout"
-        ? "تأخر الرد قليلًا. جرّب إعادة المحاولة، أو افتح المتجر الرسمي مباشرة."
-        : code.includes("429")
-          ? "المساعد مشغول حاليًا بسبب كثرة الطلبات. جرّب بعد قليل."
-          : "تعذر الوصول إلى مساعد بدر حاليًا بسبب مشكلة مؤقتة. يمكنك إعادة المحاولة دون فقدان سؤالك.";
-      setMessages(current => [...current, { id: makeId(), role: "assistant", content, retry: trimmed }]);
+      const content =
+        code === "assistant_timeout"
+          ? "تأخر الرد قليلًا. جرّب إعادة المحاولة، أو افتح المتجر الرسمي مباشرة."
+          : code.includes("429")
+            ? "المساعد مشغول حاليًا بسبب كثرة الطلبات. جرّب بعد قليل."
+            : "تعذر الوصول إلى مساعد بدر حاليًا بسبب مشكلة مؤقتة. يمكنك إعادة المحاولة دون فقدان سؤالك.";
+      const localMatches = findProducts(trimmed);
+      setMessages(current => [
+        ...current,
+        {
+          id: makeId(),
+          role: "assistant",
+          content,
+          productIds: localMatches.map(product => product.url),
+          retry: trimmed,
+          suggestions: localMatches.length ? followUps(trimmed) : undefined,
+        },
+      ]);
     } finally {
       setIsPending(false);
     }
@@ -214,30 +513,348 @@ export default function Assistant() {
   };
 
   const copyReply = async (content: string) => {
-    try { await navigator.clipboard.writeText(content); setNotice("تم نسخ الرد."); } catch { setNotice("لم يتم النسخ من هذا المتصفح."); }
+    try {
+      await navigator.clipboard.writeText(content);
+      setNotice("تم نسخ الرد.");
+    } catch {
+      setNotice("لم يتم النسخ من هذا المتصفح.");
+    }
   };
 
-  const productMap = useMemo(() => new Map(catalogProducts.map(product => [product.url, product])), []);
-  return <AppShell active="assistant" title="المساعد">
-    <section className={`assistant-page assistant-immersive assistant-theme-${theme}`}>
-      <div className="assistant-ambient" aria-hidden="true"><span /><span /><span /></div>
-      <div className="assistant-workspace">
-        <header className="immersive-head">
-          <div className="immersive-identity"><span className="immersive-avatar"><img src="https://cdn.salla.sa/AzeRxp/WR3AdGBPe4QE7iYii6LpAV85oC0tmDwGjq7BsoFu.png" alt="شعار بدر أبا الخيل" /></span><div><span className="identity-kicker">مساعد بدر أبا الخيل</span><strong>اسأل، واختَر على مهل.</strong><small><i /> متصل بالمصدر الرسمي عبر n8n</small></div></div>
-          <div className="immersive-actions"><button className="head-icon-button" onClick={() => setTheme(current => current === "light" ? "dark" : "light")} aria-label={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}>{theme === "light" ? <Moon size={17} /> : <Sun size={17} />}</button><button className="head-action" onClick={() => setHistoryOpen(true)}><History size={16} /> <span>السجل</span></button><button className="head-action head-action-primary" onClick={newConversation}><Plus size={16} /> <span>محادثة جديدة</span></button></div>
-        </header>
-
-        {historyOpen && <div className="history-layer" role="dialog" aria-modal="true" aria-label="سجل المحادثات"><div className="history-panel"><div className="history-panel-head"><div><span className="section-kicker">ذاكرة محلية</span><h2>محادثاتك مع بدر</h2></div><button className="head-icon-button" onClick={() => setHistoryOpen(false)} aria-label="إغلاق سجل المحادثات"><X size={17} /></button></div>{savedChats.length ? <div className="history-list">{savedChats.map(chat => <div className="history-item" key={chat.id}><button onClick={() => loadConversation(chat)}><strong>{chat.title}</strong><small>{new Date(chat.updatedAt).toLocaleDateString("ar-SA")}</small></button><button className="history-delete" onClick={() => deleteConversation(chat.id)} aria-label={`حذف ${chat.title}`}><Trash2 size={14} /></button></div>)}</div> : <div className="history-empty"><History size={22} /><p>لا توجد محادثات محفوظة بعد.</p><small>يظهر سجل المحادثة هنا بعد إرسال أول سؤال.</small></div>}<button className="history-new" onClick={newConversation}><Plus size={15} /> محادثة جديدة</button></div></div>}
-
-        <div className={`conversation-stage ${hasStarted ? "has-messages" : "is-empty"}`}>
-          {!hasStarted ? <div className="conversation-welcome"><div className="welcome-seal"><ShieldCheck size={19} /><span>مصدر رسمي</span><small>المعلومة أولًا</small></div><span className="section-kicker"><span className="kicker-line" /> مساحة اختيارك</span><h1>أهلًا بك في<br /><em>مساعد بدر.</em></h1><p>من أول سؤال إلى المنتج المناسب، أساعدك على اكتشاف ما تؤكده بيانات متجر بدر الرسمي — بلغة واضحة وذوق هادئ.</p><div className="welcome-proof"><span><Check size={14} /> 73 منتجًا موثقًا</span><span><Check size={14} /> روابط الشراء الرسمية</span><span><Check size={14} /> لا تخمين في الأسعار</span></div></div> : <div className="chat-window-immersive" ref={chatWindowRef} aria-live="polite">{messages.map((item, index) => { const products = item.productIds?.map(id => productMap.get(id)).filter(Boolean) as CatalogProduct[] | undefined; const compare = item.role === "assistant" && item.productIds && (messages[index - 1]?.content.includes("قارن") || messages[index - 1]?.content.includes("مقارن")); return <div className={`message-block ${item.role}`} key={item.id}><div className="message-label"><span className="message-person"><span className="message-dot" />{item.role === "assistant" ? "مساعد بدر" : "أنت"}</span><span>{String(index + 1).padStart(2, "0")}</span></div><div className="message-bubble">{renderRichText(item.content)}</div>{products && products.length > 0 && <div className="assistant-product-deck">{products.map(product => <ProductCard key={product.url} product={product} />)}</div>}{compare && products && <ComparisonTable products={products} />}{item.role === "assistant" && item.id !== "welcome" && <div className="message-tools"><button onClick={() => void copyReply(item.content)}><Copy size={13} /> نسخ الرد</button>{item.retry && <button onClick={() => void send(item.retry)}><RotateCcw size={13} /> إعادة المحاولة</button>}</div>}{item.role === "assistant" && item.suggestions && <div className="follow-up-chips">{item.suggestions.map(suggestion => <button key={suggestion} onClick={() => void send(suggestion)} disabled={isPending}>{suggestion}<ChevronLeft size={14} /></button>)}</div>}</div>; })}{isPending && <div className="message-block assistant"><div className="message-label"><span className="message-person"><span className="message-dot" />مساعد بدر</span><span>…</span></div><div className="message-bubble typing-bubble"><span className="typing-orbit"><i /><i /><i /></span><span>أرتّب لك المعلومة من المصدر الرسمي…</span></div></div>}</div>}
-
-          {!hasStarted && <div className="quick-starts"><div className="quick-starts-head"><div><span className="section-kicker">ابدأ من هنا</span><h2>وش يدور في بالك؟</h2></div><span className="quick-count">اختيارات مقترحة</span></div><div className="quick-start-grid">{quickStarts.map(item => <button key={item.label} className="quick-start-card" onClick={() => void send(item.prompt)} disabled={isPending}><span className="quick-icon">{item.icon}</span><span><strong>{item.label}</strong><small>{item.detail}</small></span><ArrowUpLeft size={16} /></button>)}</div><div className="preference-strip"><span>أو قل لي تفضيلك:</span>{preferencePrompts.map(prompt => <button key={prompt} onClick={() => void send(prompt)}>{prompt}</button>)}</div></div>}
+  const productMap = useMemo(
+    () => new Map(catalogProducts.map(product => [product.url, product])),
+    []
+  );
+  return (
+    <AppShell active="assistant" title="المساعد">
+      <section
+        className={`assistant-page assistant-immersive assistant-theme-${theme}`}
+      >
+        <div className="assistant-ambient" aria-hidden="true">
+          <span />
+          <span />
+          <span />
         </div>
+        <div className="assistant-workspace">
+          <header className="immersive-head">
+            <div className="immersive-identity">
+              <span className="immersive-avatar">
+                <img
+                  src="https://cdn.salla.sa/AzeRxp/WR3AdGBPe4QE7iYii6LpAV85oC0tmDwGjq7BsoFu.png"
+                  alt="شعار بدر أبا الخيل"
+                />
+              </span>
+              <div>
+                <span className="identity-kicker">مساعد بدر أبا الخيل</span>
+                <strong>اسأل، واختَر على مهل.</strong>
+                <small>
+                  <i /> متصل بالمصدر الرسمي عبر n8n
+                </small>
+              </div>
+            </div>
+            <div className="immersive-actions">
+              <button
+                className="head-icon-button"
+                onClick={() =>
+                  setTheme(current => (current === "light" ? "dark" : "light"))
+                }
+                aria-label={
+                  theme === "light"
+                    ? "تفعيل الوضع الداكن"
+                    : "تفعيل الوضع الفاتح"
+                }
+              >
+                {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
+              </button>
+              <button
+                className="head-action"
+                onClick={() => setHistoryOpen(true)}
+              >
+                <History size={16} /> <span>السجل</span>
+              </button>
+              <button
+                className="head-action head-action-primary"
+                onClick={newConversation}
+              >
+                <Plus size={16} /> <span>محادثة جديدة</span>
+              </button>
+            </div>
+          </header>
 
-        <div className="composer-zone"><form className="immersive-composer" onSubmit={event => { event.preventDefault(); void send(); }}><div className="composer-leading"><Sparkles size={17} /><span>اسأل مساعد بدر</span></div><input value={message} onChange={event => setMessage(event.target.value)} placeholder="اكتب سؤالك عن منتج، مناسبة، أو ميزانية..." aria-label="رسالتك إلى مساعد بدر" autoComplete="off" /><button type="submit" disabled={isPending || !message.trim()} aria-label="إرسال الرسالة"><Send size={17} /><span>إرسال</span></button></form><div className="composer-foot"><span><ShieldCheck size={14} /> إجابات مرتبطة ببيانات المتجر الرسمية</span><a href="#/store">تصفح الكتالوج <ArrowUpLeft size={13} /></a></div>{notice && <div className="human-notice"><Check size={14} /> {notice}</div>}</div>
-      </div>
-      <footer className="immersive-foot"><span><BookOpen size={14} /> لا نعرض تفاصيل منتج إلا من مصدر معتمد</span><span>© بدر أبا الخيل للعود والعطور</span><a href="https://baderabalkhail.com" target="_blank" rel="noopener noreferrer">زيارة متجر بدر <ExternalLink size={13} /></a></footer>
-    </section>
-  </AppShell>;
+          {historyOpen && (
+            <div
+              className="history-layer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="سجل المحادثات"
+            >
+              <div className="history-panel">
+                <div className="history-panel-head">
+                  <div>
+                    <span className="section-kicker">ذاكرة محلية</span>
+                    <h2>محادثاتك مع بدر</h2>
+                  </div>
+                  <button
+                    className="head-icon-button"
+                    onClick={() => setHistoryOpen(false)}
+                    aria-label="إغلاق سجل المحادثات"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+                {savedChats.length ? (
+                  <div className="history-list">
+                    {savedChats.map(chat => (
+                      <div className="history-item" key={chat.id}>
+                        <button onClick={() => loadConversation(chat)}>
+                          <strong>{chat.title}</strong>
+                          <small>
+                            {new Date(chat.updatedAt).toLocaleDateString(
+                              "ar-SA"
+                            )}
+                          </small>
+                        </button>
+                        <button
+                          className="history-delete"
+                          onClick={() => deleteConversation(chat.id)}
+                          aria-label={`حذف ${chat.title}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="history-empty">
+                    <History size={22} />
+                    <p>لا توجد محادثات محفوظة بعد.</p>
+                    <small>يظهر سجل المحادثة هنا بعد إرسال أول سؤال.</small>
+                  </div>
+                )}
+                <button className="history-new" onClick={newConversation}>
+                  <Plus size={15} /> محادثة جديدة
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`conversation-stage ${hasStarted ? "has-messages" : "is-empty"}`}
+          >
+            {!hasStarted ? (
+              <div className="conversation-welcome">
+                <div className="welcome-seal">
+                  <ShieldCheck size={19} />
+                  <span>مصدر رسمي</span>
+                  <small>المعلومة أولًا</small>
+                </div>
+                <span className="section-kicker">
+                  <span className="kicker-line" /> مساحة اختيارك
+                </span>
+                <h1>
+                  أهلًا بك في
+                  <br />
+                  <em>مساعد بدر.</em>
+                </h1>
+                <p>
+                  من أول سؤال إلى المنتج المناسب، أساعدك على اكتشاف ما تؤكده
+                  بيانات متجر بدر الرسمي — بلغة واضحة وذوق هادئ.
+                </p>
+                <div className="welcome-proof">
+                  <span>
+                    <Check size={14} /> 73 منتجًا موثقًا
+                  </span>
+                  <span>
+                    <Check size={14} /> روابط الشراء الرسمية
+                  </span>
+                  <span>
+                    <Check size={14} /> لا تخمين في الأسعار
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="chat-window-immersive"
+                ref={chatWindowRef}
+                aria-live="polite"
+              >
+                {messages.map((item, index) => {
+                  const products = item.productIds
+                    ?.map(id => productMap.get(id))
+                    .filter(Boolean) as CatalogProduct[] | undefined;
+                  const compare =
+                    item.role === "assistant" &&
+                    item.productIds &&
+                    (messages[index - 1]?.content.includes("قارن") ||
+                      messages[index - 1]?.content.includes("مقارن"));
+                  return (
+                    <div className={`message-block ${item.role}`} key={item.id}>
+                      <div className="message-label">
+                        <span className="message-person">
+                          <span className="message-dot" />
+                          {item.role === "assistant" ? "مساعد بدر" : "أنت"}
+                        </span>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                      </div>
+                      <div className="message-bubble">
+                        {renderRichText(item.content)}
+                      </div>
+                      {products && products.length > 0 && (
+                        <div className="assistant-product-deck">
+                          {products.map(product => (
+                            <ProductCard key={product.url} product={product} />
+                          ))}
+                        </div>
+                      )}
+                      {compare && products && (
+                        <ComparisonTable products={products} />
+                      )}
+                      {item.role === "assistant" && item.id !== "welcome" && (
+                        <div className="message-tools">
+                          <button onClick={() => void copyReply(item.content)}>
+                            <Copy size={13} /> نسخ الرد
+                          </button>
+                          {item.retry && (
+                            <button onClick={() => void send(item.retry)}>
+                              <RotateCcw size={13} /> إعادة المحاولة
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {item.role === "assistant" && item.suggestions && (
+                        <div className="follow-up-chips">
+                          {item.suggestions.map(suggestion => (
+                            <button
+                              key={suggestion}
+                              onClick={() => void send(suggestion)}
+                              disabled={isPending}
+                            >
+                              {suggestion}
+                              <ChevronLeft size={14} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {isPending && (
+                  <div className="message-block assistant">
+                    <div className="message-label">
+                      <span className="message-person">
+                        <span className="message-dot" />
+                        مساعد بدر
+                      </span>
+                      <span>…</span>
+                    </div>
+                    <div className="message-bubble typing-bubble">
+                      <span className="typing-orbit">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      <span>أرتّب لك المعلومة من المصدر الرسمي…</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!hasStarted && (
+              <div className="quick-starts">
+                <div className="quick-starts-head">
+                  <div>
+                    <span className="section-kicker">ابدأ من هنا</span>
+                    <h2>وش يدور في بالك؟</h2>
+                  </div>
+                  <span className="quick-count">اختيارات مقترحة</span>
+                </div>
+                <div className="quick-start-grid">
+                  {quickStarts.map(item => (
+                    <button
+                      key={item.label}
+                      className="quick-start-card"
+                      onClick={() => void send(item.prompt)}
+                      disabled={isPending}
+                    >
+                      <span className="quick-icon">{item.icon}</span>
+                      <span>
+                        <strong>{item.label}</strong>
+                        <small>{item.detail}</small>
+                      </span>
+                      <ArrowUpLeft size={16} />
+                    </button>
+                  ))}
+                </div>
+                <div className="preference-strip">
+                  <span>أو قل لي تفضيلك:</span>
+                  {preferencePrompts.map(prompt => (
+                    <button key={prompt} onClick={() => void send(prompt)}>
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="composer-zone">
+            <form
+              className="immersive-composer"
+              onSubmit={event => {
+                event.preventDefault();
+                void send();
+              }}
+            >
+              <div className="composer-leading">
+                <Sparkles size={17} />
+                <span>اسأل مساعد بدر</span>
+              </div>
+              <input
+                value={message}
+                onChange={event => setMessage(event.target.value)}
+                placeholder="اكتب سؤالك عن منتج، مناسبة، أو ميزانية..."
+                aria-label="رسالتك إلى مساعد بدر"
+                autoComplete="off"
+              />
+              <button
+                type="submit"
+                disabled={isPending || !message.trim()}
+                aria-label="إرسال الرسالة"
+              >
+                <Send size={17} />
+                <span>إرسال</span>
+              </button>
+            </form>
+            <div className="composer-foot">
+              <span>
+                <ShieldCheck size={14} /> إجابات مرتبطة ببيانات المتجر الرسمية
+              </span>
+              <a href="#/store">
+                تصفح الكتالوج <ArrowUpLeft size={13} />
+              </a>
+            </div>
+            {notice && (
+              <div className="human-notice">
+                <Check size={14} /> {notice}
+              </div>
+            )}
+          </div>
+        </div>
+        <footer className="immersive-foot">
+          <span>
+            <BookOpen size={14} /> لا نعرض تفاصيل منتج إلا من مصدر معتمد
+          </span>
+          <span>© بدر أبا الخيل للعود والعطور</span>
+          <a
+            href="https://baderabalkhail.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            زيارة متجر بدر <ExternalLink size={13} />
+          </a>
+        </footer>
+      </section>
+    </AppShell>
+  );
 }
