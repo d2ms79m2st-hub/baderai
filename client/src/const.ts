@@ -1,5 +1,3 @@
-import { OAUTH_STATE_COOKIE, encodeOAuthState } from "@shared/const";
-
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 // Start the Manus OAuth login. Call this from an event handler or effect at the
@@ -13,20 +11,10 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // with "invalid oauth state". It returns void by design, so there is no URL to
 // stash across renders.
 export const startLogin = () => {
-  const oauthPortalUrl = window.__MANUS_CONFIG__?.oauthPortalUrl;
-  const appId = window.__MANUS_CONFIG__?.projectId;
-  if (!oauthPortalUrl || !appId) throw new Error("Manus login is not configured");
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-
-  const nonce = crypto.randomUUID();
-  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
-  const state = encodeOAuthState({ redirectUri, nonce });
-
-  const url = new URL(`${oauthPortalUrl}/app-auth`);
-  url.searchParams.set("appId", appId);
-  url.searchParams.set("redirectUri", redirectUri);
-  url.searchParams.set("state", state);
-  url.searchParams.set("responseType", "code");
-
-  window.location.href = url.toString();
+  const backendUrl = window.__BADER_CONFIG__?.apiBaseUrl?.replace(/\/$/, "");
+  if (!backendUrl) throw new Error("Bader authentication is not configured");
+  window.location.href = `${backendUrl}/api/oauth/login`;
 };
+
+export const isAuthConfigured = () =>
+  Boolean(window.__BADER_CONFIG__?.apiBaseUrl);

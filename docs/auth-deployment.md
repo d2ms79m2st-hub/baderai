@@ -16,6 +16,8 @@
 - `MANUS_JWT_SECRET`: قيمة عشوائية طويلة خاصة بالخادم لتوقيع جلسات المستخدم. تُنشأ داخل مدير أسرار الاستضافة ولا تُشارك.
 - `DATABASE_URL`: رابط MySQL الخاص ببيئة الإنتاج. يجب أن يكون من قاعدة موثوقة مع نسخ احتياطي.
 - `BADER_ALLOWED_ORIGINS`: قائمة Origins مفصولة بفواصل، مثل `https://d2ms79m2st-hub.github.io`. لا تضع مسارًا أو شرطة مائلة أخيرة.
+- `BADER_BACKEND_URL`: النطاق العام HTTPS لخدمة API نفسها، مثل `https://baderai-api.example`. يستخدمه الخادم لبناء callback OAuth؛ لا تضع هنا رابط GitHub Pages.
+- `BADER_FRONTEND_URL`: أصل الواجهة المنشورة، مثل `https://d2ms79m2st-hub.github.io/baderai`، لعودة المستخدم بعد نجاح OAuth.
 
 القيمة الاختيارية `OWNER_OPEN_ID` لا تمنح صلاحية مدير تلقائيًا؛ الصلاحيات تُحسم من حقل `role` في قاعدة البيانات عبر الخادم.
 

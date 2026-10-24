@@ -15,6 +15,15 @@ export const ENV = {
   get oAuthPortalUrl() {
     return process.env.MANUS_OAUTH_PORTAL_URL ?? "https://manus.im";
   },
+  get frontendUrl() {
+    return (
+      process.env.BADER_FRONTEND_URL ??
+      "https://d2ms79m2st-hub.github.io/baderai"
+    );
+  },
+  get backendUrl() {
+    return process.env.BADER_BACKEND_URL ?? "";
+  },
   get allowedOrigins() {
     return process.env.BADER_ALLOWED_ORIGINS ?? "";
   },
