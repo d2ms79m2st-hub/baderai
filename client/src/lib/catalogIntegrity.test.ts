@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
 import { catalogProductCount, catalogProducts } from "@/data/catalog";
 
 describe("catalog migration contract", () => {
@@ -31,5 +32,33 @@ describe("catalog migration contract", () => {
   it("preserves a source snapshot timestamp for reproducible migration", async () => {
     const { catalogCollectedAt } = await import("@/data/catalog");
     expect(Number.isNaN(Date.parse(catalogCollectedAt))).toBe(false);
+  });
+
+  it("matches the app catalog to the official normalized snapshot", async () => {
+    const source = JSON.parse(
+      await readFile("client/src/data/bader-official-catalog.json", "utf8")
+    ) as { products: typeof catalogProducts };
+    const appById = new Map(catalogProducts.map(product => [product.id, product]));
+    expect(source.products).toHaveLength(catalogProducts.length);
+    for (const sourceProduct of source.products) {
+      const appProduct = appById.get(sourceProduct.id);
+      expect(appProduct).toBeDefined();
+      expect(appProduct).toMatchObject({
+        id: sourceProduct.id,
+        name: sourceProduct.name,
+        description: sourceProduct.description,
+        url: sourceProduct.url,
+        image: sourceProduct.image,
+        price: sourceProduct.price,
+        regularPrice: sourceProduct.regularPrice,
+        salePrice: sourceProduct.salePrice,
+        currency: sourceProduct.currency,
+        status: sourceProduct.status,
+        available: sourceProduct.available,
+        outOfStock: sourceProduct.outOfStock,
+        weight: sourceProduct.weight,
+        categories: sourceProduct.categories,
+      });
+    }
   });
 });
