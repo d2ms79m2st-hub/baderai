@@ -1,5 +1,5 @@
 import { catalogCollectedAt, catalogProducts, type CatalogProduct } from "@/data/catalog";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 import type { Json } from "@/lib/supabase.types";
 
 export type CatalogSource = "local" | "supabase" | "local-fallback";
@@ -106,6 +106,7 @@ export function getLocalCatalogSnapshot(): CatalogSnapshot {
 }
 
 export async function fetchSupabaseCatalog(): Promise<CatalogSnapshot> {
+  const supabase = getSupabaseClient();
   const [productsResult, categoriesResult, relationsResult, pricesResult, imagesResult] = await Promise.all([
     supabase.from("catalog_products").select("id,sku,name,description,official_url,status,currency,weight,has_options,rating,available,out_of_stock,source_collected_at").order("id"),
     supabase.from("catalog_categories").select("id,name").order("id"),

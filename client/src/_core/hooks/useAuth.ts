@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -9,6 +9,7 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRecovery, setIsRecovery] = useState(false);
+  const supabase = getSupabaseClient();
 
   const loadProfile = useCallback(async (nextUser: User | null) => {
     if (!nextUser) { setUser(null); return; }

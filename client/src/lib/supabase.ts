@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase.types";
 
 const supabaseUrl =
@@ -7,10 +7,17 @@ const supabasePublishableKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   "sb_publishable_dYhCvGOxdWquCA5YUahZNw_KZyeKaZm";
 
-export const supabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+let client: SupabaseClient<Database> | null = null;
+
+export function getSupabaseClient(): SupabaseClient<Database> {
+  if (!client) {
+    client = createClient<Database>(supabaseUrl, supabasePublishableKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
+  }
+  return client;
+}
