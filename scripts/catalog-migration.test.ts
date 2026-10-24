@@ -64,6 +64,26 @@ describe("catalog migration security contract", () => {
     const dropped = [...rollback.matchAll(/drop table if exists public\.(\w+)/g)].map(match => match[1]);
     expect(new Set(created)).toEqual(new Set(ownedTables));
     expect(dropped).toEqual([...ownedTables].reverse());
+    for (const policy of [
+      "catalog_product_images_public_read",
+      "catalog_product_images_admin_all",
+      "catalog_product_prices_public_read",
+      "catalog_product_prices_admin_all",
+      "catalog_product_categories_public_read",
+      "catalog_product_categories_admin_all",
+      "catalog_categories_public_read",
+      "catalog_categories_admin_read",
+      "catalog_categories_admin_insert",
+      "catalog_categories_admin_update",
+      "catalog_categories_admin_delete",
+      "catalog_products_public_read",
+      "catalog_products_admin_read",
+      "catalog_products_admin_insert",
+      "catalog_products_admin_update",
+      "catalog_products_admin_delete",
+    ]) {
+      expect(rollback).toContain(`drop policy if exists ${policy}`);
+    }
     expect(rollback).toMatch(/deletes all catalog data/i);
     expect(rollback).toMatch(/does not restore rows/i);
     expect(rollback).not.toMatch(/profiles|chat_messages|human_requests|auth\.users/);
