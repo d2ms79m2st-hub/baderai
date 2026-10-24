@@ -300,6 +300,7 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
 .product-card-body { display: flex; flex: 1; flex-direction: column; padding: 16px 16px 14px; }
 .product-source { color: #987a45; font-size: 9px; }
 .product-card h3 { margin: 8px 0 7px; color: var(--dark-text); font-family: 'Noto Kufi Arabic', sans-serif; font-size: 14px; font-weight: 600; }
+.product-category { display: block; margin-bottom: 7px; color: #987a45; font-size: 9px; }
 .product-card p { margin: 0; min-height: 47px; color: #748279; font-size: 10px; line-height: 1.85; }
 .product-size { display: inline-block; margin-top: 9px; color: #829188; font-size: 9px; }
 .product-meta { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 11px; border-top: 1px solid #e7e2d9; }

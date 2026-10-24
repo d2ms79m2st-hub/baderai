@@ -21,6 +21,7 @@ import {
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
 import { catalogProducts, type CatalogProduct } from "@/data/catalog";
+import { resolveProductRefs, searchCatalog } from "@/lib/catalogSearch";
 import {
   askN8nAssistant,
   type AssistantMessage,
@@ -129,144 +130,6 @@ function renderRichText(text: string) {
   });
 }
 
-function uniqueProducts(products: CatalogProduct[]) {
-  return Array.from(
-    new Map(products.map(product => [product.url, product])).values()
-  );
-}
-
-function normalizeArabic(value: string) {
-  return value
-    .toLocaleLowerCase("ar")
-    .normalize("NFKD")
-    .replace(/[\u064B-\u065F\u0670]/g, "")
-    .replace(/[إأآا]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    .replace(/ـ/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-const categoryIntents = [
-  {
-    terms: ["عود", "اعواد", "أعواد", "خشب العود", "دهن العود"],
-    categories: ["خشب العود", "دهن العود والمسك"],
-  },
-  {
-    terms: ["عطر", "عطور", "عطري", "عطرية", "عطرًا", "عطرا"],
-    categories: ["العطور", "المرشات"],
-  },
-  {
-    terms: ["بخور", "تبخير", "مبخرة", "مباخر"],
-    categories: ["البخور", "المباخر"],
-  },
-  { terms: ["زعفران", "لبان"], categories: ["الزعفران واللبان"] },
-  { terms: ["اكسسوار", "اكسسوارات"], categories: ["الاكسسوارات"] },
-];
-
-function resolveProductRefs(refs: AssistantProductRef[]) {
-  const resolved: CatalogProduct[] = [];
-  for (const ref of refs) {
-    const id = String(ref.id ?? ref.productId ?? "");
-    const name = ref.name ? normalizeArabic(ref.name) : "";
-    const match = catalogProducts.find(
-      product =>
-        (id && product.id === id) ||
-        (ref.url && product.url === ref.url) ||
-        (name && normalizeArabic(product.name) === name)
-    );
-    if (match && match.name && match.url && match.image) resolved.push(match);
-  }
-  return uniqueProducts(resolved);
-}
-
-function findProducts(query: string) {
-  const source = normalizeArabic(query);
-  const budget = source.match(
-    /(?:اقل من|تحت|بحدود|ميزانيه|ميزانية)\s*(\d{2,4})/i
-  )?.[1];
-  const requestedCategories = categoryIntents
-    .filter(intent =>
-      intent.terms.some(term => source.includes(normalizeArabic(term)))
-    )
-    .flatMap(intent => intent.categories);
-  const exactNames = catalogProducts.filter(product => {
-    const name = normalizeArabic(product.name);
-    return name.length > 2 && (source.includes(name) || name.includes(source));
-  });
-  const nameTokens = source
-    .split(" ")
-    .filter(
-      token =>
-        token.length >= 3 &&
-        ![
-          "ابي",
-          "ابغى",
-          "اريد",
-          "ابحث",
-          "رشح",
-          "منتج",
-          "منتجات",
-          "عندي",
-          "عندكم",
-        ].includes(token)
-    );
-  const partialNames = catalogProducts.filter(product => {
-    const name = normalizeArabic(product.name);
-    return nameTokens.some(token => name.includes(token));
-  });
-  if (
-    source.includes("غير موجود") ||
-    source.includes("مو موجود") ||
-    source.includes("لا يوجد") ||
-    source.includes("ما عندكم")
-  ) {
-    return uniqueProducts([...exactNames, ...partialNames]).slice(0, 6);
-  }
-  const categoryMatches = requestedCategories.length
-    ? catalogProducts.filter(product =>
-        product.categories.some(category =>
-          requestedCategories.includes(category.name)
-        )
-      )
-    : [];
-  const budgetMatches = budget
-    ? catalogProducts.filter(
-        product =>
-          typeof product.price === "number" &&
-          product.price <= Number(budget) &&
-          !product.outOfStock
-      )
-    : [];
-  const giftMatches =
-    source.includes("هديه") || source.includes("هدية")
-      ? catalogProducts.filter(
-          product =>
-            !product.outOfStock &&
-            product.categories.some(category =>
-              ["العطور", "المرشات", "بوكسات"].includes(category.name)
-            )
-        )
-      : [];
-  const availabilityMatches =
-    source.includes("متوفر") || source.includes("متاح")
-      ? catalogProducts.filter(
-          product => product.available && !product.outOfStock
-        )
-      : [];
-  const matches = uniqueProducts([
-    ...exactNames,
-    ...partialNames,
-    ...budgetMatches,
-    ...giftMatches,
-    ...categoryMatches,
-    ...availabilityMatches,
-  ]);
-  const limit = source.includes("قارن") || source.includes("مقارن") ? 4 : 6;
-  return matches.slice(0, limit);
-}
 function followUps(query: string) {
   const source = query.toLocaleLowerCase("ar");
   if (source.includes("هدية"))
@@ -452,7 +315,9 @@ export default function Assistant() {
         catalog: catalogProducts,
       });
       const structured = resolveProductRefs(result.products);
-      const attached = structured.length ? structured : findProducts(trimmed);
+      const localSearch = searchCatalog(trimmed);
+      console.debug("[CatalogSearch]", localSearch.diagnostics);
+      const attached = structured.length ? structured : localSearch.products;
       setMessages(current => [
         ...current,
         {
@@ -471,7 +336,9 @@ export default function Assistant() {
           : code.includes("429")
             ? "المساعد مشغول حاليًا بسبب كثرة الطلبات. جرّب بعد قليل."
             : "تعذر الوصول إلى مساعد بدر حاليًا بسبب مشكلة مؤقتة. يمكنك إعادة المحاولة دون فقدان سؤالك.";
-      const localMatches = findProducts(trimmed);
+      const localSearch = searchCatalog(trimmed);
+      console.debug("[CatalogSearch]", localSearch.diagnostics);
+      const localMatches = localSearch.products;
       setMessages(current => [
         ...current,
         {
