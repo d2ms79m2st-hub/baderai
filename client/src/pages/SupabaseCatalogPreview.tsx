@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, LoaderCircle, RefreshCw, ShieldCheck, Tag } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
-import { getLocalCatalogSnapshot, loadCatalog, type CatalogSnapshot } from "@/lib/catalogRepository";
+import { createLocalFallback, loadCatalog, type CatalogSnapshot } from "@/lib/catalogRepository";
 
 export default function SupabaseCatalogPreview() {
   const [snapshot, setSnapshot] = useState<CatalogSnapshot | null>(null);
@@ -15,8 +15,9 @@ export default function SupabaseCatalogPreview() {
     try {
       setSnapshot(await loadCatalog("supabase"));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "تعذر الاتصال بكتالوج Supabase.");
-      setSnapshot({ ...getLocalCatalogSnapshot(), source: "local-fallback" });
+      const fallback = createLocalFallback(reason);
+      setError(fallback.error);
+      setSnapshot(fallback.snapshot);
     } finally {
       setLoading(false);
     }
@@ -36,7 +37,7 @@ export default function SupabaseCatalogPreview() {
     {!loading && error && <div className="catalog-empty" role="alert"><AlertTriangle size={25} /><h3>تعذر الاتصال بكتالوج Supabase</h3><p>{error}</p><p>نعرض الآن snapshot المحلي القديم كحل احتياطي واضح، وليس مخزونًا مباشرًا.</p><button className="secondary-cta light" onClick={() => void refresh()}><RefreshCw size={16} /> إعادة المحاولة</button></div>}
     {!loading && !error && snapshot?.products.length === 0 && <div className="catalog-empty" role="status"><ShieldCheck size={25} /><h3>اتصلنا بـSupabase دون منتجات مرئية</h3><p>قد تكون البيانات محجوبة بسياسات القراءة العامة أو أن اللقطة فارغة.</p></div>}
     {!loading && snapshot && snapshot.products.length > 0 && <>
-      <div className="catalog-result-line"><span><strong>{snapshot.products.length}</strong> منتج مرئي</span><span>المصدر: Supabase public RLS · {new Date(snapshot.collectedAt).toLocaleDateString("ar-SA")}</span></div>
+      <div className="catalog-result-line"><span><strong>{snapshot.products.length}</strong> منتج مرئي</span><span>المصدر: {snapshot.source === "local-fallback" ? "نسخة محلية احتياطية قديمة، وليست مخزونًا مباشرًا" : "Supabase public RLS"} · {new Date(snapshot.collectedAt).toLocaleDateString("ar-SA")}</span></div>
       <div className="catalog-result-line"><span>{categories.length} تصنيفًا مرئيًا</span><span>التوفر هنا حالة snapshot وليست مخزونًا مباشرًا</span></div>
       <div className="product-grid catalog-grid">{snapshot.products.map(product => <ProductCard key={`${product.id}-${product.url}`} product={product} />)}</div>
     </>}

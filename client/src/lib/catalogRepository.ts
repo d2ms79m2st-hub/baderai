@@ -1,6 +1,7 @@
 import { catalogCollectedAt, catalogProducts, type CatalogProduct } from "@/data/catalog";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { Json } from "@/lib/supabase.types";
+import { useEffect, useState } from "react";
 
 export type CatalogSource = "local" | "supabase" | "local-fallback";
 
@@ -9,6 +10,45 @@ export type CatalogSnapshot = {
   collectedAt: string;
   source: CatalogSource;
 };
+
+export const catalogRolloutSource: "local" | "supabase" =
+  import.meta.env.VITE_CATALOG_SOURCE === "supabase" ? "supabase" : "local";
+
+export function createLocalFallback(reason: unknown) {
+  return {
+    snapshot: { ...getLocalCatalogSnapshot(), source: "local-fallback" as const },
+    error: reason instanceof Error ? reason.message : "تعذر الاتصال بكتالوج Supabase.",
+  };
+}
+
+export function useStoreCatalog() {
+  const [snapshot, setSnapshot] = useState<CatalogSnapshot | null>(
+    catalogRolloutSource === "local" ? getLocalCatalogSnapshot() : null,
+  );
+  const [loading, setLoading] = useState(catalogRolloutSource === "supabase");
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = async () => {
+    if (catalogRolloutSource === "local") return;
+    setLoading(true);
+    setError(null);
+    try {
+      setSnapshot(await fetchSupabaseCatalog());
+    } catch (reason) {
+      const fallback = createLocalFallback(reason);
+      setError(fallback.error);
+      setSnapshot(fallback.snapshot);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (catalogRolloutSource === "supabase") void refresh();
+  }, []);
+
+  return { snapshot, loading, error, refresh };
+}
 
 type ProductRow = {
   id: string;
