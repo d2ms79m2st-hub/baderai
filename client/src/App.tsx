@@ -7,14 +7,16 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Assistant from "./pages/Assistant";
 import Home from "./pages/Home";
-import Knowledge from "./pages/Knowledge";
-import Store from "./pages/Store";
+import Knowledge from "@/pages/Knowledge";
+import Store from "@/pages/Store";
+import SupabaseCatalogPreview from "@/pages/SupabaseCatalogPreview";
 
 function AppRoutes() {
   return <Switch>
     <Route path="/" component={Home} />
     <Route path="/assistant" component={Assistant} />
     <Route path="/store" component={Store} />
+    <Route path="/store-supabase" component={SupabaseCatalogPreview} />
     <Route path="/knowledge" component={Knowledge} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />

@@ -1,8 +1,9 @@
+export type CatalogRating = Record<string, unknown> | null;
 export type CatalogProduct = {
   id: string; name: string; description: string | null; url: string; image: string;
   price: number | null; regularPrice: number | null; salePrice: number | null; currency: string;
   status: string | null; available: boolean; outOfStock: boolean; weight: string | null;
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string }[]; rating?: CatalogRating;
 };
 
 export const catalogCollectedAt = '2026-10-22T05:42:56Z';
