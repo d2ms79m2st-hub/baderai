@@ -32,12 +32,14 @@
 
 - `id text primary key`: معرّف المنتج من المصدر الرسمي، ويُحفظ كنص لأن المصدر الحالي يعرضه كنص.
 - `name text not null`
+- `sku text null`
 - `description text null`
 - `official_url text not null`
 - `status text null`
 - `currency text not null default 'SAR'`
 - `weight text null`: يُحفظ كنص في البداية لأن المصدر الحالي لا يضمن وحدة رقمية موحدة.
 - `has_options boolean not null default false`
+- `rating numeric(4,2) null`
 - `available boolean not null default false`
 - `out_of_stock boolean not null default false`
 - `source_store_id text not null`
@@ -45,6 +47,7 @@
 - `source_updated_at timestamptz null`: يُملأ فقط إن وفره المصدر مستقبلًا.
 - `created_at timestamptz not null default now()`
 - `updated_at timestamptz not null default now()`
+- `source_payload jsonb not null default '{}'::jsonb`: نسخة من الحقول المصدرية غير المطبّعة حتى لا تضيع حقول مستقبلية أثناء الترحيل.
 
 قيود مقترحة: `currency` من العملات المدعومة، وعدم السماح بأن يكون المنتج متاحًا ونافدًا في الوقت نفسه. لا تُفرض قاعدة `salePrice < regularPrice` على مستوى قاعدة البيانات قبل حسم سلوك المصدر للخصومات.
 
@@ -90,7 +93,11 @@
 - `is_current boolean not null default true`
 - `observed_at timestamptz not null`
 
-لا تُنقل الصور إلى Supabase Storage في هذه المرحلة؛ الروابط الحالية خارجية ومستخدمة فعليًا. يُبحث في التخزين الداخلي فقط بعد تحديد الحاجة وقياس الحجم والحقوق ومصدر النسخ الأصلية.
+لا تُنقل الصور إلى Supabase Storage في هذه المرحلة؛ الروابط الحالية خارجية ومستخدمة فعليًا. يُحفظ `originalImage` داخل سجل الصورة، ويُبحث في التخزين الداخلي فقط بعد تحديد الحاجة وقياس الحجم والحقوق ومصدر النسخ الأصلية.
+
+## مطابقة الحقول
+
+كل حقل في `CatalogProduct` الحالي يملك وجهة في التصميم: `id` إلى المفتاح الأساسي، `name` و`description` و`url` إلى حقول المنتج، حقول الأسعار إلى سجل الأسعار، `currency` و`status` و`available` و`outOfStock` و`weight` و`hasOptions` إلى المنتج، و`categories` إلى جدول التصنيفات والعلاقة. الحقول الموجودة في JSON الرسمي ولا تظهر في نوع الواجهة، وهي `sku` و`rating` و`originalImage`، محفوظة صراحة في التصميم. أما `collectedAt` و`sourceApi` و`storeId` فمحفوظة في حقول المصدر، وتُحفظ الحمولة الكاملة في `source_payload` كحماية من فقدان حقول مستقبلية.
 
 ## ما يؤجل
 
@@ -106,6 +113,17 @@
 6. **قراءة مزدوجة:** إبقاء الواجهة تقرأ من الملفات الحالية، وتشغيل مقارنة قراءة من قاعدة البيانات دون تحويل المصدر.
 7. **تحويل تدريجي:** بعد نجاح المقارنة في أكثر من لقطة، تُفعّل قراءة قاعدة البيانات خلف مفتاح إعداد يمكن تعطيله، مع إبقاء ملفات اللقطة كخطة رجوع.
 8. **الترقية اللاحقة:** إضافة إدارة الأسعار والمخزون من لوحة موثوقة فقط بعد تحديد من يملك صلاحية التعديل ومصدر الحقيقة.
+
+أداة الاستيراد التجريبية موجودة في `scripts/catalog-import.ts`. وهي تكتب مخزن JSON محليًا فقط، وتستخدم مفاتيح ثابتة للمنتج والتصنيف والعلاقة والصورة ولقطة السعر. يمكن تشغيلها مثلًا بالأمر التالي، مع إبقاء المسارات المؤقتة خارج المستودع:
+
+```bash
+pnpm catalog:import -- \
+  --source client/src/data/bader-official-catalog.json \
+  --store /tmp/bader-catalog-store.json \
+  --report /tmp/bader-catalog-report.json
+```
+
+التقرير الملتزم في المستودع يثبت آخر تشغيل على اللقطة الحالية: `docs/architecture/catalog-import-report.json`. لا يحتوي المستودع على مخزن مستورد تشغيلي، ولم يتصل المستورد بقاعدة Supabase.
 
 ## صلاحيات RLS المقترحة لاحقًا
 

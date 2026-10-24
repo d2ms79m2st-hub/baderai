@@ -1,0 +1,22 @@
+{
+  "sourceCollectedAt": "2026-10-22T05:38:41Z",
+  "expected": {
+    "products": 73,
+    "categories": 10,
+    "memberships": 118,
+    "images": 73,
+    "prices": 73,
+    "available": 67,
+    "outOfStock": 6
+  },
+  "imported": {
+    "products": 73,
+    "categories": 10,
+    "memberships": 118,
+    "images": 73,
+    "prices": 73,
+    "available": 67,
+    "outOfStock": 6
+  },
+  "differences": []
+}
