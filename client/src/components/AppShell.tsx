@@ -25,7 +25,7 @@ function AccountActions() {
 
   if (loading) return <span className="text-link">جارٍ التحقق…</span>;
   if (!isAuthenticated) {
-    return <><button type="button" className="text-link" onClick={() => setAuthOpen(true)}>تسجيل الدخول</button><AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} /></>;
+    return <><button type="button" className="text-link account-login" onClick={() => setAuthOpen(true)}>تسجيل الدخول</button><AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} /></>;
   }
 
   return (
