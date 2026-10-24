@@ -8,8 +8,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { isAuthConfigured, startLogin } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
+import AuthDialog from "@/components/AuthDialog";
 
 const officialSite = "https://baderabalkhail.com";
 
@@ -21,19 +21,16 @@ type Props = {
 
 function AccountActions() {
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
 
   if (loading) return <span className="text-link">جارٍ التحقق…</span>;
   if (!isAuthenticated) {
-    return (
-      <button type="button" className="text-link" onClick={() => startLogin()}>
-        تسجيل الدخول
-      </button>
-    );
+    return <><button type="button" className="text-link" onClick={() => setAuthOpen(true)}>تسجيل الدخول</button><AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} /></>;
   }
 
   return (
     <span className="account-actions">
-      <span className="text-link">مرحبًا {user?.name || "بك"}</span>
+      <span className="text-link">مرحبًا {user?.profile?.name || user?.user_metadata?.name || "بك"}</span>
       <button type="button" className="text-link" onClick={() => void logout()}>
         تسجيل الخروج
       </button>
@@ -158,7 +155,7 @@ export default function AppShell({
             >
               المتجر الرسمي <ExternalLink size={14} />
             </a>
-            {isAuthConfigured() && <AccountActions />}
+            <AccountActions />
           </div>
         </header>
         {children}
