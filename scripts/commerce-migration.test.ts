@@ -35,6 +35,7 @@ describe("commerce migration security contract", () => {
     expect(migration).toContain("provider_event_id text not null unique");
     expect(migration).toContain("inventory_status in ('unknown','tracked','paused')");
     expect(migration).toContain("inventory_status <> 'tracked' or v_inventory.quantity_available is null");
+    expect(migration).toContain("order_number := v_order_number");
     expect(migration).toContain("security definer");
     expect(migration).toContain("set search_path = public");
     expect(migration).toContain("private.is_admin()");
@@ -48,6 +49,8 @@ describe("commerce migration security contract", () => {
     expect(migration).toContain("grant select on table public.store_orders");
     expect(migration).toContain("revoke all on function public.store_create_order");
     expect(migration).toContain("grant execute on function public.store_create_order");
+    expect(migration).toContain("grant usage on schema private to authenticated");
+    expect(migration).toContain("grant execute on function private.is_admin() to authenticated");
     const executeGrant = migration.match(/grant execute on function[\s\S]*?to authenticated;/)?.[0] ?? "";
     expect(executeGrant).not.toContain("anon");
     expect(migration).toContain("create policy store_orders_owner_read");

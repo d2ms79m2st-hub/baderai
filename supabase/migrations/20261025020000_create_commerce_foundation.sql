@@ -129,6 +129,24 @@ create index if not exists store_order_events_order_idx on public.store_order_ev
 
 revoke all on table public.store_inventory, public.store_inventory_movements, public.store_orders, public.store_order_items, public.store_order_addresses, public.store_order_events, public.store_payment_events, public.store_promotions, public.store_settings from anon, authenticated;
 grant select on table public.store_orders, public.store_order_items, public.store_order_addresses, public.store_order_events to authenticated;
+grant select on table
+  public.store_inventory,
+  public.store_inventory_movements,
+  public.store_payment_events,
+  public.store_promotions,
+  public.store_settings
+to authenticated;
+grant insert, update, delete on table
+  public.store_inventory,
+  public.store_inventory_movements,
+  public.store_orders,
+  public.store_order_items,
+  public.store_order_addresses,
+  public.store_order_events,
+  public.store_payment_events,
+  public.store_promotions,
+  public.store_settings
+to authenticated;
 grant usage, select on sequence
   public.store_inventory_movements_id_seq,
   public.store_order_items_id_seq,
@@ -191,8 +209,16 @@ declare
 begin
   if v_customer is null then raise exception 'authentication_required'; end if;
   if p_idempotency_key is null or length(trim(p_idempotency_key)) < 8 then raise exception 'invalid_idempotency_key'; end if;
-  select id, order_number, store_orders.status, total into v_order_id, v_order_number, status, total from store_orders where idempotency_key = p_idempotency_key;
-  if v_order_id is not null then order_id := v_order_id; return next; return; end if;
+  select o.id, o.order_number, o.status, o.total
+    into v_order_id, v_order_number, status, total
+    from public.store_orders as o
+    where o.idempotency_key = p_idempotency_key;
+  if v_order_id is not null then
+    order_id := v_order_id;
+    order_number := v_order_number;
+    return next;
+    return;
+  end if;
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then raise exception 'items_required'; end if;
   for v_item in select * from jsonb_array_elements(p_items) loop
     v_product_id := v_item->>'product_id';
@@ -225,6 +251,8 @@ $$;
 
 revoke all on function public.store_create_order(text, jsonb, text, text, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.store_create_order(text, jsonb, text, text, text, text, text, text) to authenticated;
+grant usage on schema private to authenticated;
+grant execute on function private.is_admin() to authenticated;
 
 comment on table public.store_inventory is 'Live inventory only when inventory_status=tracked; null quantity means unknown and blocks checkout.';
 comment on table public.store_orders is 'Commerce orders; payment remains pending until a verified provider webhook updates it.';
