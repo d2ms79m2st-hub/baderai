@@ -405,12 +405,7 @@ export default function Assistant() {
         <div className="assistant-workspace">
           <header className="immersive-head">
             <div className="immersive-identity">
-              <span className="immersive-avatar">
-                <img
-                  src="/baderai/brand/bader-sign.jpg"
-                  alt="شعار بدر أبا الخيل"
-                />
-              </span>
+              <span className="immersive-avatar" aria-label="شعار بدر أبا الخيل">ب</span>
               <div>
                 <span className="identity-kicker">مساعد بدر أبا الخيل</span>
                 <strong>اسأل، واختَر على مهل.</strong>

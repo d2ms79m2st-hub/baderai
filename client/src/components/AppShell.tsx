@@ -66,12 +66,7 @@ export default function AppShell({
       <aside className={`side-rail ${open ? "is-open" : ""}`}>
         <div className="rail-top">
           <a className="brand-lockup" href="#/">
-            <span className="brand-seal brand-logo">
-              <img
-                src="/baderai/brand/bader-sign.jpg"
-                alt="شعار بدر أبا الخيل"
-              />
-            </span>
+            <span className="brand-seal brand-logo" aria-label="شعار بدر أبا الخيل">ب</span>
             <span>
               <strong>مساعد بدر</strong>
               <small>عزنا بطيبنا</small>
