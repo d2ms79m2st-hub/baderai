@@ -407,7 +407,7 @@ export default function Assistant() {
             <div className="immersive-identity">
               <span className="immersive-avatar">
                 <img
-                  src="https://cdn.salla.sa/AzeRxp/WR3AdGBPe4QE7iYii6LpAV85oC0tmDwGjq7BsoFu.png"
+                  src="/baderai/brand/bader-sign.jpg"
                   alt="شعار بدر أبا الخيل"
                 />
               </span>

@@ -68,7 +68,7 @@ export default function AppShell({
           <a className="brand-lockup" href="#/">
             <span className="brand-seal brand-logo">
               <img
-                src="https://cdn.salla.sa/AzeRxp/WR3AdGBPe4QE7iYii6LpAV85oC0tmDwGjq7BsoFu.png"
+                src="/baderai/brand/bader-sign.jpg"
                 alt="شعار بدر أبا الخيل"
               />
             </span>

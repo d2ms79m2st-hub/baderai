@@ -879,3 +879,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .assistant-page.assistant-immersive .conversation-welcome h1 { font-size: clamp(40px,13vw,57px); }
   .assistant-page.assistant-immersive .chat-window-immersive { max-height: 58vh; }
 }
+
+
+/* Approved Bader sign artwork. Keep the full framed composition visible in the hero. */
+.brand-seal.brand-logo { border-radius: 12px; background: var(--brand-white); }
+.brand-seal.brand-logo img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.immersive-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.hero-brand-card { width: 250px; height: 342px; overflow: hidden; padding: 0; border: 0; border-radius: var(--radius-card); background: var(--brand-white); box-shadow: 0 25px 65px rgba(18,55,42,.18); }
+.hero-brand-card::before, .hero-brand-card::after { display: none; }
+.hero-brand-card img { width: 100%; height: 100%; margin: 0; object-fit: cover; object-position: center; border-radius: inherit; filter: none; }
+@media (max-width: 720px) { .hero-brand-card { width: 185px; height: 255px; border-radius: var(--radius-card); } }
